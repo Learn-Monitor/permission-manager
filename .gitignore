@@ -28,6 +28,10 @@ build/*
 hs_err_pid*
 replay_pid*
 
+# Editor files
+.vscode/
+.idea/
+
 # Gradle files
 .gradle
 gradle

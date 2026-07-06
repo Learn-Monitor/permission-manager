@@ -10,16 +10,8 @@ version = "v1.0.0-SNAPSHOT-0"
 repositories {
     mavenCentral()
     maven {
-        name = "GitHubPackages"
+        name = "Student Database Snapshot Repository"
         url = uri("https://maven.pkg.github.com/Learn-Monitor/student-database/")
-        credentials {
-            username = System.getenv("GITHUB_ACTOR")
-            password = System.getenv("GITHUB_TOKEN")
-        }
-    }
-    maven {
-        name = "Plugin Loader Repository"
-        url = uri("https://maven.pkg.github.com/Learn-Monitor/plugin-loader/")
         credentials {
             username = System.getenv("GITHUB_ACTOR")
             password = System.getenv("GITHUB_TOKEN")
@@ -32,7 +24,7 @@ dependencies {
     compileOnly("org.slf4j:slf4j-api:2.0.13")
 
     // Main project
-    compileOnly("igs-landstuhl:student-database:v2.0.0-SNAPSHOT-2")
+    compileOnly("io.github.learn-monitor:student-database:s2607b1-SNAPSHOT")
     implementation("de.igs-landstuhl:plugin-loader:v1.0.5")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.13.4") // using JUnit 5 (latest)
