@@ -57,21 +57,24 @@ public class PermissionManager extends Plugin {
     @Override
     protected void onLoad() {
         getLogger().info("Loading permission manager...");
+        getLogger().info("Loading permissions...");
+        Permission.loadAll();
+        getLogger().info("Adding class dependent permissions...");
         for (SchoolClass schoolClass : SchoolClass.getAll()) {
-            ArrayList<Permission> classDependedPerms = new ArrayList<>();
+            ArrayList<Permission> classDependentPerms = new ArrayList<>();
             Permission viewPermission = new Permission(studentViewPermission(schoolClass), "Viewing student data for this school class (auto-generated on start)");
-            classDependedPerms.add(viewPermission);
+            classDependentPerms.add(viewPermission);
             Permission writePermission = new Permission(studentWritePermission(schoolClass), "Writing student data for this school class (auto-generated on start)");
-            classDependedPerms.add(writePermission);
+            classDependentPerms.add(writePermission);
             for (Subject subject : Subject.getAll()) {
                 Permission subjectViewPermission = new Permission(studentViewPermission(schoolClass, subject), "Viewing a student's " + subject.getName() + " data for this school class (auto-generated on start)");
-                classDependedPerms.add(subjectViewPermission);
+                classDependentPerms.add(subjectViewPermission);
                 Permission subjectWritePermission = new Permission(studentWritePermission(schoolClass, subject), "Writing a student's " + subject.getName() + " data for this school class (auto-generated on start)");
-                classDependedPerms.add(subjectWritePermission);
+                classDependentPerms.add(subjectWritePermission);
             }
-            Permission.registerAll(classDependedPerms);
+            Permission.registerAll(classDependentPerms);
         }
-        getLogger().info("Loaded class depended perms");
+        getLogger().info("Added class dependent perms");
     }
     
 }
