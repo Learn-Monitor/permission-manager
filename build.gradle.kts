@@ -24,8 +24,10 @@ dependencies {
     compileOnly("org.slf4j:slf4j-api:2.0.13")
 
     // Main project
-    compileOnly("io.github.learn-monitor:student-database:s2607b1-SNAPSHOT")
-    implementation("de.igs-landstuhl:plugin-loader:v1.0.5")
+    compileOnly("io.github.learn-monitor:student-database:s2607b2-SNAPSHOT")
+
+    // For debugging
+    runtimeOnly("io.github.learn-monitor:student-database:s2607b2-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.13.4") // using JUnit 5 (latest)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
