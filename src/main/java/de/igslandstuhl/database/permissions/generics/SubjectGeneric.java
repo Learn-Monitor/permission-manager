@@ -20,4 +20,9 @@ public class SubjectGeneric extends PermissionGeneric {
     public List<String> getAllReplacements() {
         return Subject.getAll().stream().map((s) -> s.getName()).map(PermissionManager::convertName).toList();
     }
+    public Subject getSubject(String name) {
+        return Subject.getAll().stream()
+        .filter((c) -> PermissionManager.convertName(c.getName()).equals(name))
+        .findAny().orElse(null);
+    }
 }

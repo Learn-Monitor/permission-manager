@@ -7,7 +7,7 @@ import de.igslandstuhl.database.server.resources.ResourceLocation;
 
 import de.igslandstuhl.database.permissions.generics.*;
 import de.igslandstuhl.database.permissions.meta.*;
-
+import de.igslandstuhl.database.permissions.restrictions.RestrictionTypeHelper;
 import de.igslandstuhl.database.plugins.Plugin;
 
 public class PermissionManager extends Plugin {
@@ -73,6 +73,8 @@ public class PermissionManager extends Plugin {
         getLogger().info("Registering permission generics...");
         SchoolClassGeneric.getInstance().register();
         SubjectGeneric.getInstance().register();
+        getLogger().info("Registering restriction types...");
+        RestrictionTypeHelper.registerDefaults();
         getLogger().info("Registering permission effects...");
         PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
         getLogger().info("permission-manager successfully loaded.");

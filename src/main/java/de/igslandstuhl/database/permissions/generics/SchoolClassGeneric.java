@@ -20,4 +20,9 @@ public class SchoolClassGeneric extends PermissionGeneric {
     public List<String> getAllReplacements() {
         return SchoolClass.getAll().stream().map((c) -> c.getLabel()).map(PermissionManager::convertName).toList();
     }
+    public SchoolClass getSchoolClass(String name) {
+        return SchoolClass.getAll().stream()
+        .filter((c) -> PermissionManager.convertName(c.getLabel()).equals(name))
+        .findAny().orElse(null);
+    }
 }
