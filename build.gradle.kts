@@ -5,7 +5,7 @@ plugins {
 
 group = "io.github.learn-monitor"
 
-version = "v1.0.0-SNAPSHOT-0"
+version = "v1.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -25,6 +25,7 @@ dependencies {
 
     // Main project
     compileOnly("io.github.learn-monitor:student-database:s2607b2-SNAPSHOT")
+    compileOnly("io.github.learn-monitor:plugin-loader:v1.0.6")
 
     // For debugging
     runtimeOnly("io.github.learn-monitor:student-database:s2607b2-SNAPSHOT")
