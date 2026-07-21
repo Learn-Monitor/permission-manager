@@ -3,10 +3,12 @@ package de.igslandstuhl.database.permissions;
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
 import de.igslandstuhl.database.api.Subject;
-import de.igslandstuhl.database.permissions.meta.PermissionManagerConfig;
-import de.igslandstuhl.database.permissions.meta.PermissionsConfigLoader;
-import de.igslandstuhl.database.plugins.Plugin;
 import de.igslandstuhl.database.server.resources.ResourceLocation;
+
+import de.igslandstuhl.database.permissions.generics.*;
+import de.igslandstuhl.database.permissions.meta.*;
+
+import de.igslandstuhl.database.plugins.Plugin;
 
 public class PermissionManager extends Plugin {
     public static final ResourceLocation PERMISSIONS_CONFIG = new ResourceLocation("meta", "permission-manager", "permissions.json");
@@ -23,6 +25,9 @@ public class PermissionManager extends Plugin {
 
     public static PermissionManager getInstance() {
         return instance;
+    }
+    public static String convertName(String name) {
+        return name.toLowerCase().replace(" ", "_");
     }
 
     @Override
@@ -65,6 +70,9 @@ public class PermissionManager extends Plugin {
         getLogger().info("Loading permission manager...");
         getLogger().info("Loading permissions...");
         Permission.loadAll();
+        getLogger().info("Registering permission generics...");
+        SchoolClassGeneric.getInstance().register();
+        SubjectGeneric.getInstance().register();
         getLogger().info("Registering permission effects...");
         PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
         getLogger().info("permission-manager successfully loaded.");

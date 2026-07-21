@@ -1,4 +1,4 @@
-package de.igslandstuhl.database.permissions.meta;
+package de.igslandstuhl.database.permissions.generics;
 
 import java.util.*;
 import java.util.regex.Matcher;

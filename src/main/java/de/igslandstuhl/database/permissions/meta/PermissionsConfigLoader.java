@@ -6,6 +6,7 @@ import java.util.Map;
 import de.igslandstuhl.database.permissions.Permission;
 import de.igslandstuhl.database.permissions.PermissionEffect;
 import de.igslandstuhl.database.permissions.PermissionManager;
+import de.igslandstuhl.database.permissions.generics.PermissionGeneric;
 import de.igslandstuhl.database.permissions.restrictions.PostRestriction;
 import de.igslandstuhl.database.server.Server;
 import de.igslandstuhl.database.server.webserver.access.AccessLevel;
