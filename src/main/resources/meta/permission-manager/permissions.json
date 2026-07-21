@@ -1,0 +1,34 @@
+{
+    "generics": [
+        {
+            "name": "view_student_data.$schoolClass.$subject",
+            "description": "Allows viewing student data.",
+            "paths": [
+                "/student",
+                "/student-data",
+                "/build_student.js",
+                "/student-subjects",
+                "/current-topic",
+                "/topic-list",
+                "/tasks"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "student",
+                    "restriction": "part_of.$schoolClass",
+                    "field_missing_behavior": "grant"
+                },
+                {
+                    "type": "subject",
+                    "restriction": "is.$subject",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "view_class_data.$schoolClass"
+            ],
+            "default": "teacher",
+            "generate_generic": true
+        }
+    ]
+}

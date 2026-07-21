@@ -1,18 +1,21 @@
 package de.igslandstuhl.database.permissions;
 
-import java.util.ArrayList;
-
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
 import de.igslandstuhl.database.api.Subject;
 import de.igslandstuhl.database.permissions.meta.PermissionManagerConfig;
+import de.igslandstuhl.database.permissions.meta.PermissionsConfigLoader;
 import de.igslandstuhl.database.plugins.Plugin;
+import de.igslandstuhl.database.server.resources.ResourceLocation;
 
 public class PermissionManager extends Plugin {
+    public static final ResourceLocation PERMISSIONS_CONFIG = new ResourceLocation("meta", "permission-manager", "permissions.json");
+
     private static PermissionManager instance;
     private final PermissionManagerConfig config = new PermissionManagerConfig(this);
 
     private final Registry<String, Permission> permissionRegistry = new Registry<>();
+    private final Registry<Permission, PermissionEffect> permissionEffectRegistry = new Registry<>();
 
     public PermissionManager() {
         instance = this;
@@ -29,6 +32,9 @@ public class PermissionManager extends Plugin {
 
     public Registry<String, Permission> permissionRegistry() {
         return permissionRegistry;
+    }
+    public Registry<Permission, PermissionEffect> permissionEffectRegistry() {
+        return permissionEffectRegistry;
     }
 
     @Override
@@ -59,22 +65,8 @@ public class PermissionManager extends Plugin {
         getLogger().info("Loading permission manager...");
         getLogger().info("Loading permissions...");
         Permission.loadAll();
-        getLogger().info("Adding class dependent permissions...");
-        for (SchoolClass schoolClass : SchoolClass.getAll()) {
-            ArrayList<Permission> classDependentPerms = new ArrayList<>();
-            Permission viewPermission = new Permission(studentViewPermission(schoolClass), "Viewing student data for this school class (auto-generated on start)");
-            classDependentPerms.add(viewPermission);
-            Permission writePermission = new Permission(studentWritePermission(schoolClass), "Writing student data for this school class (auto-generated on start)");
-            classDependentPerms.add(writePermission);
-            for (Subject subject : Subject.getAll()) {
-                Permission subjectViewPermission = new Permission(studentViewPermission(schoolClass, subject), "Viewing a student's " + subject.getName() + " data for this school class (auto-generated on start)");
-                classDependentPerms.add(subjectViewPermission);
-                Permission subjectWritePermission = new Permission(studentWritePermission(schoolClass, subject), "Writing a student's " + subject.getName() + " data for this school class (auto-generated on start)");
-                classDependentPerms.add(subjectWritePermission);
-            }
-            Permission.registerAll(classDependentPerms);
-        }
-        getLogger().info("Added class dependent perms");
+        getLogger().info("Registering permission effects...");
+        PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
+        getLogger().info("permission-manager successfully loaded.");
     }
-    
 }

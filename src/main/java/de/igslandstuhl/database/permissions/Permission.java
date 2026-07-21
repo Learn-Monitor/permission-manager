@@ -67,4 +67,21 @@ public class Permission {
         }
         registerAll(permissions);
     }
+    public static void loadAllIfNotExists() {
+        if (PermissionManager.getInstance().permissionRegistry().keyStream().findAny().isEmpty()) {
+            loadAll();
+        }
+    }
+    public static Permission getByName(String name) {
+        loadAllIfNotExists();
+        return PermissionManager.getInstance().permissionRegistry().get(name);
+    }
+    public static Permission getByNameOrCreate(String name, String description) {
+        Permission permission = getByName(name);
+        if (permission == null) {
+            permission = new Permission(name, description);
+            permission.register();
+        }
+        return permission;
+    }
 }
