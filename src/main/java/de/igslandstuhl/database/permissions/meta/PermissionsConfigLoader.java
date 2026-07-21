@@ -22,8 +22,8 @@ public class PermissionsConfigLoader {
     private PermissionEffect getEffect(Map<String, ?> permissionJSON) {
         String name = (String) permissionJSON.get("name");
         String description = (String) permissionJSON.get("description");
-        List<String> allowedPaths = (List<String>) permissionJSON.get("allowedPaths");
-        List<Map<String, String>> restrictionConfigs = (List<Map<String, String>>) permissionJSON.get("allowedPaths");
+        List<String> allowedPaths = (List<String>) permissionJSON.get("paths");
+        List<Map<String, String>> restrictionConfigs = (List<Map<String, String>>) permissionJSON.get("post_restrictions");
         List<String> depends = (List<String>) permissionJSON.get("depends");
 
         Permission permission = Permission.getByNameOrCreate(name, description);
