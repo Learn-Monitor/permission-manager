@@ -84,4 +84,8 @@ public class Permission {
         }
         return permission;
     }
+    public static List<Permission> getAll() {
+        loadAllIfNotExists();
+        return PermissionManager.getInstance().permissionRegistry().keyStream().map(Permission::getByName).toList();
+    }
 }
