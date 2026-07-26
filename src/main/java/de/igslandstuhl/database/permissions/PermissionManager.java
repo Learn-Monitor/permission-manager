@@ -77,6 +77,8 @@ public class PermissionManager extends Plugin {
         RestrictionTypeHelper.registerDefaults();
         getLogger().info("Registering permission effects...");
         PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
+        getLogger().info("Registering user effects...");
+        UserEffect.registerAll();
         getLogger().info("permission-manager successfully loaded.");
     }
 }
