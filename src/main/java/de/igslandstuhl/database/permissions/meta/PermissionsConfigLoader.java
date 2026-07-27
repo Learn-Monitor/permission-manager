@@ -41,7 +41,7 @@ public class PermissionsConfigLoader {
         .forEach((e) -> e.register());
     }
     public void registerAllPermissionEffects() {
-        Map<String, ?> permissionsMap = Server.getInstance().getResourceManager().readJsonResourceMerged(PermissionManager.PERMISSIONS_CONFIG);
+        Map<String, ?> permissionsMap = Server.getInstance().getResourceManager().readJsonResourceFullMerged(PermissionManager.PERMISSIONS_CONFIG);
 
         @SuppressWarnings("unchecked")
         List<Map<String, ?>> generics = (List<Map<String, ?>>) permissionsMap.get("generics");
