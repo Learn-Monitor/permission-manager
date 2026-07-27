@@ -24,11 +24,11 @@ dependencies {
     compileOnly("org.slf4j:slf4j-api:2.0.13")
 
     // Main project
-    compileOnly("io.github.learn-monitor:student-database:s2607b3-SNAPSHOT")
+    compileOnly("io.github.learn-monitor:student-database:s2607b4-SNAPSHOT")
     compileOnly("io.github.learn-monitor:plugin-loader:v1.0.6")
 
     // For debugging
-    runtimeOnly("io.github.learn-monitor:student-database:s2607b3-SNAPSHOT")
+    runtimeOnly("io.github.learn-monitor:student-database:s2607b4-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.13.4") // using JUnit 5 (latest)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
