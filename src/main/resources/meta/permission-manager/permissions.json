@@ -184,6 +184,23 @@
                 "view_class_data"
             ],
             "default": "admin"
+        },
+        {
+            "name": "manage_plugins",
+            "description": "Allows editing plugin settings.",
+            "paths": [
+                "/plugins",
+                "/plugin-list",
+                "/get-plugin",
+                "/toggle-plugin",
+                "/set-plugin-setting",
+                "/toggle-plugin-setting"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "admin"
         }
     ]
 }
