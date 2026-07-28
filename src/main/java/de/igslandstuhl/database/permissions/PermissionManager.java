@@ -3,8 +3,12 @@ package de.igslandstuhl.database.permissions;
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
 import de.igslandstuhl.database.api.Subject;
+import de.igslandstuhl.database.api.User;
 import de.igslandstuhl.database.server.resources.ResourceLocation;
-
+import de.igslandstuhl.database.server.webserver.ContentType;
+import de.igslandstuhl.database.server.webserver.access.AccessLevel;
+import de.igslandstuhl.database.server.webserver.handlers.HttpHandler;
+import de.igslandstuhl.database.server.webserver.responses.PostResponse;
 import de.igslandstuhl.database.permissions.generics.*;
 import de.igslandstuhl.database.permissions.meta.*;
 import de.igslandstuhl.database.permissions.restrictions.RestrictionTypeHelper;
@@ -79,6 +83,26 @@ public class PermissionManager extends Plugin {
         PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
         getLogger().info("Registering user effects...");
         UserEffect.registerAll();
+        getLogger().info("Registering request handlers...");
+        Registry.sqlRequestHandlerRegistry().register("list-permissions", (u) -> {
+            return Permission.getAll()
+            .toString()
+            .replace("[", "[\"")
+            .replace(",", "\",\"")
+            .replace("]", "\"]")
+            .replace("\"\"", "");
+        });
+        HttpHandler.registerPostRequestHandler("/toggle-permission", AccessLevel.ADMIN, (rq) -> {
+            User user = User.getUser(rq.getString("user"));
+            Permission permission = Permission.getByName(rq.getString("permission"));
+
+            if (user != null && permission != null) {
+                PermissionNode.getPermissionNode(user.getUsername(), permission).toggleActive();
+                return PostResponse.ok("Successfully toggled permission for user " + user.getUsername(), ContentType.TEXT_PLAIN, rq);
+            } else {
+                return PostResponse.badRequest("User or permission does not exist", rq);
+            }
+        });
         getLogger().info("permission-manager successfully loaded.");
     }
 }
