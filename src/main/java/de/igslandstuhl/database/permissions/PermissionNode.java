@@ -33,9 +33,11 @@ public class PermissionNode {
     public boolean isActive() {
         return active;
     }
-
     public void setActive(boolean active) {
         this.active = active;
+    }
+    public void toggleActive() {
+        setActive(!active);
     }
 
     public static PermissionNode getPermissionNode(String username, Permission permission) {
@@ -79,5 +81,14 @@ public class PermissionNode {
         }
         cache.add(node);
         return node;
+    }
+    @Override
+    public String toString() {
+        return new StringBuilder("{")
+        .append("\"permission\":").append(getPermission()).append(",")
+        .append("\"username\":\"").append(getUsername()).append("\",")
+        .append("\"active\":").append(isActive())
+        .append("}")
+        .toString();
     }
 }
