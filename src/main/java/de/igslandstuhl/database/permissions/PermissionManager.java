@@ -110,6 +110,8 @@ public class PermissionManager extends Plugin {
                 return PostResponse.badRequest("User or permission does not exist", rq);
             }
         });
+        getLogger().info("Adding access listener...");
+        AccessListener.getInstance().register();
         getLogger().info("permission-manager successfully loaded.");
     }
 }
