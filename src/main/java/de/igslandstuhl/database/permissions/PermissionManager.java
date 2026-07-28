@@ -99,6 +99,17 @@ public class PermissionManager extends Plugin {
                 return PostResponse.badRequest("User or permission does not exist", rq);
             }
         });
+        HttpHandler.registerPostRequestHandler("/get-permission-node", AccessLevel.ADMIN, (rq) -> {
+            User user = User.getUser(rq.getString("user"));
+            Permission permission = Permission.getByName(rq.getString("permission"));
+
+            if (user != null && permission != null) {
+                PermissionNode node = PermissionNode.getPermissionNode(user.getUsername(), permission);
+                return PostResponse.ok(node.toString(), ContentType.JSON, rq);
+            } else {
+                return PostResponse.badRequest("User or permission does not exist", rq);
+            }
+        });
         getLogger().info("permission-manager successfully loaded.");
     }
 }

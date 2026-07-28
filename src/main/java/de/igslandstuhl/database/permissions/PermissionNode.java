@@ -82,4 +82,13 @@ public class PermissionNode {
         cache.add(node);
         return node;
     }
+    @Override
+    public String toString() {
+        return new StringBuilder("{")
+        .append("\"permission\":").append(getPermission()).append(",")
+        .append("\"username\":\"").append(getUsername()).append("\",")
+        .append("\"active\":").append(isActive())
+        .append("}")
+        .toString();
+    }
 }
