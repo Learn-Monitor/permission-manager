@@ -27,7 +27,7 @@ public class AccessListener extends EventListener<AccessManagerEvent> {
         User currentUser = Server.getInstance().getWebServer().getSessionManager().getSessionUser(event.getRequest());
         if (currentUser == null) currentUser = User.ANONYMOUS;
         UserEffect effect = UserEffect.get(currentUser);
-        event.changeAccessState(effect.testAccess(event.getPath(), event.getRequest()));
+        event.changeAccessState(effect.testAccess(event.getRequest().getPath(), event.getRequest()));
     }
     
 }
