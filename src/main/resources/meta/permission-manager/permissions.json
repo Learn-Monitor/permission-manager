@@ -28,7 +28,49 @@
                 "standard_files",
                 "view_class_data.$schoolClass"
             ],
-            "default": "teacher",
+            "default": "admin",
+            "generate_generic": true
+        },
+        {
+            "name": "view_class_data.$schoolClass",
+            "description": "Allows viewing class data.",
+            "paths": [
+                "/class",
+                "/student-list"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "class",
+                    "restriction": "is.$schoolClass",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "fetch_subjects"
+            ],
+            "default": "admin",
+            "generate_generic": true
+        },
+        {
+            "name": "change_class_data.$schoolClass",
+            "description": "Allows changing class data.",
+            "paths": [
+                "/edit-class",
+                "/add-subject-to-class"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "class",
+                    "restriction": "is.$schoolClass",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "view_class_data"
+            ],
+            "default": "admin",
             "generate_generic": true
         }
     ],
@@ -49,7 +91,8 @@
             "description": "Allows requesting the style_sheet, and the javascript library file. If you remove this from any user, the app will not work for them.",
             "paths": [
                 "/style.css",
-                "/student-database.js"
+                "/student-database.js",
+                "/favicon.ico"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -66,6 +109,46 @@
                 "standard_files"
             ],
             "default": "user"
+        },
+        {
+            "name": "fetch_subjects",
+            "description": "Allows fetching subject data, this is needed for almost any permission so it is recommended to assign it every user.",
+            "paths": [
+                "/subjects"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
+        },
+        {
+            "name": "view_classes",
+            "description": "Allows viewing the class management page.",
+            "paths": [
+                "/manage_classes",
+                "/classes"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "view_class_data"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_classes",
+            "description": "Allows adding and removing classes.",
+            "paths": [
+                "/add-class",
+                "/delete-class"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "view_classes"
+            ],
+            "default": "admin"
         }
     ]
 }

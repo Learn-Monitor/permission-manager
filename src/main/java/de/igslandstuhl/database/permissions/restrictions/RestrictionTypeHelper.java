@@ -73,5 +73,36 @@ public class RestrictionTypeHelper {
                 return true;
             }
         });
+        RestrictionType.register("class", (args, fieldMissingBehavior) -> (request) -> {
+            if (args.length != 2) {
+                PermissionManager.getInstance().getLogger().warn("Wrong config: subject post restriction must have arg length 2");
+                return true;
+            }
+
+            APIPostRequest apiPostRequest;
+            if (request instanceof APIPostRequest r) {
+                apiPostRequest = r;
+            } else {
+                apiPostRequest = APIPostRequest.fromPostRequest(request);
+            }
+
+            SchoolClass schoolClass = apiPostRequest.getSchoolClass();
+
+            if (schoolClass == null) return "grant".equals(fieldMissingBehavior);
+
+            String restriction = args[0];
+            
+            if (restriction == "is") {
+                SchoolClass restrictionClass = SchoolClassGeneric.getInstance().getSchoolClass(args[1]);
+                if (restrictionClass == null) {
+                    PermissionManager.getInstance().getLogger().warn("School class not found: {}", args[1]);
+                    return true;
+                }
+                return restrictionClass.equals(schoolClass);
+            } else {
+                PermissionManager.getInstance().getLogger().warn("Wrong config: unknown class restriction type: {}", restriction);
+                return true;
+            }
+        });
     }
 }
