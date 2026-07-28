@@ -201,6 +201,47 @@
                 "standard_files"
             ],
             "default": "admin"
+        },
+        {
+            "name": "manage_teachers",
+            "description": "Allows adding and removing teachers, as well as changing into their view.",
+            "paths": [
+                "/manage_teachers",
+                "/teachers",
+                "/add-teachers",
+                "/teacher",
+                "/build_teacher.js",
+                "/teacher-classes",
+                "/teacher-subjects",
+                "/add-subject-to-teacher",
+                "/add-class-to-teacher"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "manage_classes"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_subjects",
+            "description": "Allows adding and removing subjects, editing their name, and assigning them grade levels.",
+            "paths": [
+                "/manage_subjects",
+                "/subject",
+                "/add-subject",
+                "/build_subject.js",
+                "/edit-subject",
+                "/add-grade-to-subject",
+                "/delete-grade-from-subject",
+                "/delete-subject"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "fetch_subjects"
+            ],
+            "default": "admin"
         }
     ]
 }
