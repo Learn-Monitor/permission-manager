@@ -25,10 +25,223 @@
                 }
             ],
             "depends": [
+                "standard_files",
                 "view_class_data.$schoolClass"
             ],
-            "default": "teacher",
+            "default": "admin",
             "generate_generic": true
+        },
+        {
+            "name": "change_student_graduation.$schoolClass",
+            "description": "Allows changing a student's graduation.",
+            "paths": [
+                "/change-graduation-level"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "student",
+                    "restriction": "part_of.$schoolClass",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "view_student_data.$schoolClass"
+            ],
+            "default": "admin",
+            "generate_generic": true
+        },
+        {
+            "name": "view_class_data.$schoolClass",
+            "description": "Allows viewing class data.",
+            "paths": [
+                "/class",
+                "/student-list"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "class",
+                    "restriction": "is.$schoolClass",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "fetch_subjects"
+            ],
+            "default": "admin",
+            "generate_generic": true
+        },
+        {
+            "name": "change_class_data.$schoolClass",
+            "description": "Allows changing class data.",
+            "paths": [
+                "/edit-class",
+                "/add-subject-to-class"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "class",
+                    "restriction": "is.$schoolClass",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "view_class_data"
+            ],
+            "default": "admin",
+            "generate_generic": true
+        }
+    ],
+    "flat": [
+        {
+            "name": "login",
+            "description": "Allows viewing the login page. Do not remove this from the ANONYMOUS user, or no one may be able to sign in.",
+            "paths": [
+                "/",
+                "/login"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "standard_files",
+            "description": "Allows requesting the style_sheet, and the javascript library file. If you remove this from any user, the app will not work for them.",
+            "paths": [
+                "/style.css",
+                "/student-database.js",
+                "/favicon.ico"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "dashboard",
+            "description": "Allows viewing the dashboard. This should be set to true for all logged in users.",
+            "paths": [
+                "/dashboard"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
+        },
+        {
+            "name": "fetch_subjects",
+            "description": "Allows fetching subject data, this is needed for almost any permission so it is recommended to assign it every user.",
+            "paths": [
+                "/subjects"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
+        },
+        {
+            "name": "view_classes",
+            "description": "Allows viewing the class management page.",
+            "paths": [
+                "/manage_classes",
+                "/classes"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "view_class_data"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_classes",
+            "description": "Allows adding and removing classes.",
+            "paths": [
+                "/add-class",
+                "/delete-class"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "view_classes"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_students",
+            "description": "Allows adding and removing students, and viewing the manage_students page.",
+            "paths": [
+                "/manage_students",
+                "/add-students"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "view_student_data",
+                "view_class_data"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_plugins",
+            "description": "Allows editing plugin settings.",
+            "paths": [
+                "/plugins",
+                "/plugin-list",
+                "/get-plugin",
+                "/toggle-plugin",
+                "/set-plugin-setting",
+                "/toggle-plugin-setting"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_teachers",
+            "description": "Allows adding and removing teachers, as well as changing into their view.",
+            "paths": [
+                "/manage_teachers",
+                "/teachers",
+                "/add-teachers",
+                "/teacher",
+                "/build_teacher.js",
+                "/teacher-classes",
+                "/teacher-subjects",
+                "/add-subject-to-teacher",
+                "/add-class-to-teacher"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "manage_classes"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_subjects",
+            "description": "Allows adding and removing subjects, editing their name, and assigning them grade levels.",
+            "paths": [
+                "/manage_subjects",
+                "/subject",
+                "/add-subject",
+                "/build_subject.js",
+                "/edit-subject",
+                "/add-grade-to-subject",
+                "/delete-grade-from-subject",
+                "/delete-subject"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "fetch_subjects"
+            ],
+            "default": "admin"
         }
     ]
 }
