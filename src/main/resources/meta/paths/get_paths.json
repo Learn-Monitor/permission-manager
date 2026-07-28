@@ -2,7 +2,7 @@
     "/list-permissions": {
         "type": "GET",
         "handler_type": "SQLRequestHandler",
-        "namespaces": "sql",
+        "namespaces": [ "sql" ],
         "context": "virtual",
         "access_level": "admin"
     }
