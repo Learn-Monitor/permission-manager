@@ -32,6 +32,26 @@
             "generate_generic": true
         },
         {
+            "name": "change_student_graduation.$schoolClass",
+            "description": "Allows changing a student's graduation.",
+            "paths": [
+                "/change-graduation-level"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "student",
+                    "restriction": "part_of.$schoolClass",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "view_student_data.$schoolClass"
+            ],
+            "default": "admin",
+            "generate_generic": true
+        },
+        {
             "name": "view_class_data.$schoolClass",
             "description": "Allows viewing class data.",
             "paths": [
@@ -147,6 +167,21 @@
             "depends": [
                 "standard_files",
                 "view_classes"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "manage_students",
+            "description": "Allows adding and removing students, and viewing the manage_students page.",
+            "paths": [
+                "/manage_students",
+                "/add-students"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files",
+                "view_student_data",
+                "view_class_data"
             ],
             "default": "admin"
         }
