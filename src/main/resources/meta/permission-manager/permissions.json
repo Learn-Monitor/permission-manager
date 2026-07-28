@@ -25,10 +25,47 @@
                 }
             ],
             "depends": [
+                "standard_files",
                 "view_class_data.$schoolClass"
             ],
             "default": "teacher",
             "generate_generic": true
+        }
+    ],
+    "flat": [
+        {
+            "name": "login",
+            "description": "Allows viewing the login page. Do not remove this from the ANONYMOUS user, or no one may be able to sign in.",
+            "paths": [
+                "/",
+                "/login"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "standard_files",
+            "description": "Allows requesting the style_sheet, and the javascript library file. If you remove this from any user, the app will not work for them.",
+            "paths": [
+                "/style.css",
+                "/student-database.js"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "dashboard",
+            "description": "Allows viewing the dashboard. This should be set to true for all logged in users.",
+            "paths": [
+                "/dashboard"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
         }
     ]
 }
