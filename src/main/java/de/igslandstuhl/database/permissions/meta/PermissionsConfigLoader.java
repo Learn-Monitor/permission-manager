@@ -40,12 +40,20 @@ public class PermissionsConfigLoader {
         .map(this::getEffect)
         .forEach((e) -> e.register());
     }
+    private void registerFlatEffects(List<Map<String, ?>> list) {
+        list.stream()
+        .map(this::getEffect)
+        .forEach((e) -> e.register());
+    }
     public void registerAllPermissionEffects() {
         Map<String, ?> permissionsMap = Server.getInstance().getResourceManager().readJsonResourceFullMerged(PermissionManager.PERMISSIONS_CONFIG);
 
         @SuppressWarnings("unchecked")
         List<Map<String, ?>> generics = (List<Map<String, ?>>) permissionsMap.get("generics");
+        @SuppressWarnings("unchecked")
+        List<Map<String, ?>> flatEffects = (List<Map<String, ?>>) permissionsMap.get("flat");
 
         registerGenerics(generics);
+        registerFlatEffects(flatEffects);
     }
 }
