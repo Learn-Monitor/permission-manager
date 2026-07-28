@@ -86,11 +86,7 @@ public class PermissionManager extends Plugin {
         getLogger().info("Registering request handlers...");
         Registry.sqlRequestHandlerRegistry().register("list-permissions", (u) -> {
             return Permission.getAll()
-            .toString()
-            .replace("[", "[\"")
-            .replace(",", "\",\"")
-            .replace("]", "\"]")
-            .replace("\"\"", "");
+            .toString();
         });
         HttpHandler.registerPostRequestHandler("/toggle-permission", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));

@@ -88,4 +88,13 @@ public class Permission {
         loadAllIfNotExists();
         return PermissionManager.getInstance().permissionRegistry().keyStream().map(Permission::getByName).toList();
     }
+    @Override
+    public String toString() {
+        return new StringBuilder("{\"name\":")
+        .append('"').append(getName()).append("\",")
+        .append("\"description\":")
+        .append('"').append(getDescription()).append("\"")
+        .append("}")
+        .toString();
+    }
 }
