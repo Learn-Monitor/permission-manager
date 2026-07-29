@@ -1,7 +1,9 @@
 package de.igslandstuhl.database.permissions;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.User;
@@ -49,10 +51,21 @@ public class UserEffect {
                 .filter((e) -> e.defaultLevel() == AccessLevel.PUBLIC)
                 .map((e) -> e.permission())
                 .toArray((a) -> new Permission[a]);
-            } else{
-                activePermissions = Permission.getAll().stream()
-                .filter((p) -> PermissionNode.getPermissionNode(u.getUsername(), p).isActive())
-                .toArray((a) -> new Permission[a]);
+            } else {
+                // Get permissions directly assigned to the user
+                Set<Permission> permissions = new LinkedHashSet<>(
+                    Permission.getAll().stream()
+                        .filter((p) -> PermissionNode.getPermissionNode(u.getUsername(), p).isActive())
+                        .toList()
+                );
+                
+                // Get permissions from active roles
+                RoleNode.getUserRoles(u.getUsername()).stream()
+                    .filter((r) -> RoleNode.getRoleNode(u.getUsername(), r).isActive())
+                    .flatMap((r) -> r.getPermissions().stream())
+                    .forEach(permissions::add);
+                
+                activePermissions = permissions.toArray(new Permission[0]);
             }
             new UserEffect(u, activePermissions).register();
         });

@@ -1,0 +1,29 @@
+# Permission Manager Roles Configuration
+# Define roles and their associated permissions here
+# Users can modify this file to customize roles
+
+roles:
+  - name: teacher
+    description: "Teacher role with permissions to view and manage student data"
+    permissions:
+      - login
+      - standard_files
+      - view_class_data
+      - view_student_data
+
+  - name: admin
+    description: "Administrator role with full permissions"
+    permissions:
+      - login
+      - standard_files
+      - view_class_data
+      - view_student_data
+      - change_class_data
+      - change_student_graduation
+
+  - name: student
+    description: "Student role with limited permissions to view their own data"
+    permissions:
+      - login
+      - standard_files
+      - view_student_data
