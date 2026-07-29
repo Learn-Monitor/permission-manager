@@ -22,6 +22,7 @@ public class PermissionManager extends Plugin {
 
     private final Registry<String, Permission> permissionRegistry = new Registry<>();
     private final Registry<Permission, PermissionEffect> permissionEffectRegistry = new Registry<>();
+    private final Registry<String, Role> roleRegistry = new Registry<>();
 
     public PermissionManager() {
         instance = this;
@@ -45,9 +46,14 @@ public class PermissionManager extends Plugin {
     public Registry<Permission, PermissionEffect> permissionEffectRegistry() {
         return permissionEffectRegistry;
     }
+    public Registry<String, Role> roleRegistry() {
+        return roleRegistry;
+    }
 
     @Override
     protected void onDisable() {
+        getLogger().info("Saving role configuration...");
+        RolesYamlConfigLoader.getInstance().saveRoles();
         getLogger().warn("Permission Manager plugin disabled. This can cause problems while running, better remove it instead.");
     }
 
@@ -74,6 +80,8 @@ public class PermissionManager extends Plugin {
         getLogger().info("Loading permission manager...");
         getLogger().info("Loading permissions...");
         Permission.loadAll();
+        getLogger().info("Loading roles from YAML configuration...");
+        RolesYamlConfigLoader.getInstance().registerAllRoles();
         getLogger().info("Registering permission generics...");
         SchoolClassGeneric.getInstance().register();
         SubjectGeneric.getInstance().register();
@@ -88,15 +96,32 @@ public class PermissionManager extends Plugin {
             return Permission.getAll()
             .toString();
         });
+        Registry.sqlRequestHandlerRegistry().register("list-roles", (u) -> {
+            return Role.getAll()
+            .toString();
+        });
         HttpHandler.registerPostRequestHandler("/toggle-permission", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));
             Permission permission = Permission.getByName(rq.getString("permission"));
 
             if (user != null && permission != null) {
                 PermissionNode.getPermissionNode(user.getUsername(), permission).toggleActive();
+                UserEffect.registerAll();
                 return PostResponse.ok("Successfully toggled permission for user " + user.getUsername(), ContentType.TEXT_PLAIN, rq);
             } else {
                 return PostResponse.badRequest("User or permission does not exist", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/toggle-role", AccessLevel.ADMIN, (rq) -> {
+            User user = User.getUser(rq.getString("user"));
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (user != null && role != null) {
+                RoleNode.getRoleNode(user.getUsername(), role).toggleActive();
+                UserEffect.registerAll();
+                return PostResponse.ok("Successfully toggled role for user " + user.getUsername(), ContentType.TEXT_PLAIN, rq);
+            } else {
+                return PostResponse.badRequest("User or role does not exist", rq);
             }
         });
         HttpHandler.registerPostRequestHandler("/get-permission-node", AccessLevel.ADMIN, (rq) -> {
@@ -108,6 +133,17 @@ public class PermissionManager extends Plugin {
                 return PostResponse.ok(node.toString(), ContentType.JSON, rq);
             } else {
                 return PostResponse.badRequest("User or permission does not exist", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/get-role-node", AccessLevel.ADMIN, (rq) -> {
+            User user = User.getUser(rq.getString("user"));
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (user != null && role != null) {
+                RoleNode node = RoleNode.getRoleNode(user.getUsername(), role);
+                return PostResponse.ok(node.toString(), ContentType.JSON, rq);
+            } else {
+                return PostResponse.badRequest("User or role does not exist", rq);
             }
         });
         getLogger().info("Adding access listener...");

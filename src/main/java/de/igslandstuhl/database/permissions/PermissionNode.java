@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.api.User;
 import de.igslandstuhl.database.server.Server;
+import de.igslandstuhl.database.server.sql.SQLHelper;
 import de.igslandstuhl.database.server.webserver.access.AccessLevel;
 
 public class PermissionNode {
@@ -33,11 +34,24 @@ public class PermissionNode {
     public boolean isActive() {
         return active;
     }
+
     public void setActive(boolean active) {
         this.active = active;
+        persistToDatabase();
     }
+
     public void toggleActive() {
         setActive(!active);
+    }
+
+    private void persistToDatabase() {
+        try {
+            Server.getInstance().getConnection().executeVoidProcessSecure(
+                SQLHelper.getUpdateObjectProcess("permission_node", new String[]{String.valueOf(active), permission.getName(), username})
+            );
+        } catch (SQLException e) {
+            PermissionManager.getInstance().getLogger().error("Failed to persist PermissionNode for user \"{}\" and permission \"{}\" to database", username, permission.getName(), e);
+        }
     }
 
     public static PermissionNode getPermissionNode(String username, Permission permission) {
@@ -52,7 +66,9 @@ public class PermissionNode {
                     nodeRef.set(new PermissionNode(permission, username, active));
                 },
                 "is_active_node",
-                new String[] {"active"})
+                new String[] {"active"},
+                permission.getName(),
+                username)
             ;
         } catch (SQLException e) {
             PermissionManager.getInstance().getLogger().error("Failed to retrieve Permissions from database", e);

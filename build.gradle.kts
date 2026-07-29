@@ -23,6 +23,9 @@ dependencies {
     // Logging
     compileOnly("org.slf4j:slf4j-api:2.0.13")
 
+    // YAML parsing
+    implementation("org.yaml:snakeyaml:2.2")
+
     // Main project
     compileOnly("io.github.learn-monitor:student-database:s2607b5-SNAPSHOT")
     compileOnly("io.github.learn-monitor:plugin-loader:v1.0.6")
