@@ -100,6 +100,12 @@ public class PermissionManager extends Plugin {
             return Role.getAll()
             .toString();
         });
+        Registry.sqlRequestHandlerRegistry().register("list-users", (u) -> {
+            return User.getAllUsers()
+            .stream()
+            .map((u1) -> '"' + u1.getUsername() + '"')
+            .toList().toString();
+        });
         HttpHandler.registerPostRequestHandler("/toggle-permission", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));
             Permission permission = Permission.getByName(rq.getString("permission"));
@@ -122,6 +128,27 @@ public class PermissionManager extends Plugin {
                 return PostResponse.ok("Successfully toggled role for user " + user.getUsername(), ContentType.TEXT_PLAIN, rq);
             } else {
                 return PostResponse.badRequest("User or role does not exist", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/toggle-role-permission", AccessLevel.ADMIN, (rq) -> {
+            Permission permission = Permission.getByName(rq.getString("permission"));
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (permission != null && role != null) {
+                role.togglePermission(permission);
+                UserEffect.registerAll();
+                return PostResponse.ok("Successfully toggled permission for role " + role.getName(), ContentType.TEXT_PLAIN, rq);
+            } else {
+                return PostResponse.badRequest("Permission or role does not exist", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/get-role", AccessLevel.ADMIN, (rq) -> {
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (role != null) {
+                return PostResponse.ok(role.toString(), ContentType.JSON, rq);
+            } else {
+                return PostResponse.badRequest("Role does not exist", rq);
             }
         });
         HttpHandler.registerPostRequestHandler("/get-permission-node", AccessLevel.ADMIN, (rq) -> {

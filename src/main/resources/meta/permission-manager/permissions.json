@@ -242,6 +242,26 @@
                 "fetch_subjects"
             ],
             "default": "admin"
+        },
+        {
+            "name": "manage_permissions",
+            "description": "Allows editing permissions and roles.",
+            "paths": [
+                "/manage_permissions",
+                "/list-permissions",
+                "/list-roles",
+                "/list-users",
+                "/toggle-permission",
+                "/toggle-role",
+                "/toggle-role-permission",
+                "/get-permission-node",
+                "/get-role-node"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "admin"
         }
     ]
 }

@@ -44,6 +44,14 @@ public class Role {
         }
     }
 
+    public void togglePermission(Permission permission) {
+        if (permissions.contains(permission)) {
+            permissions.remove(permission);
+        } else {
+            permissions.add(permission);
+        }
+    }
+
     public void register() {
         PermissionManager permissionManager = PermissionManager.getInstance();
         permissionManager.roleRegistry().register(getName(), this);

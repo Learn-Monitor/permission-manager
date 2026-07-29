@@ -5,5 +5,26 @@
         "namespaces": [ "sql" ],
         "context": "virtual",
         "access_level": "admin"
+    },
+    "/list-roles": {
+        "type": "GET",
+        "handler_type": "SQLRequestHandler",
+        "namespaces": [ "sql" ],
+        "context": "virtual",
+        "access_level": "admin"
+    },
+    "/list-users": {
+        "type": "GET",
+        "handler_type": "SQLRequestHandler",
+        "namespaces": [ "sql" ],
+        "context": "virtual",
+        "access_level": "admin"
+    },
+    "/manage_permissions": {
+        "type": "GET",
+        "handler_type": "TemplatingFileRequestHandler",
+        "namespaces": ["admin"],
+        "context": "html",
+        "access_level": "admin"
     }
 }

@@ -1,11 +1,20 @@
 async function fetchPermissions() {
     return await getJson('/list-permissions');
 }
-async function fetchRoleNames() {
+async function fetchRoles() {
     return await getJson('/list-roles');
+}
+async function fetchUsers() {
+    return await getJson('/list-users');
 }
 async function fetchRole(roleName) {
     return await getJsonWithPost('/get-role', { name: roleName });
+}
+async function fetchRoleNode(roleName, user) {
+    return await getJsonWithPost('/get-role-node', { user, role: roleName });
+}
+async function toggleRoleForUser(user, role) {
+    return await post('/toggle-role', {user, role});
 }
 async function togglePermissionForRole(permission, roleName) {
     return await post('/toggle-role-permission', { permission, role: roleName });
@@ -15,21 +24,36 @@ let role_panels = {}
 function moveSelected(from, to) {
     [...from.selectedOptions].forEach(option => {
         to.appendChild(option);
-        const [roleName, permission] = option.value.split('.');
-        togglePermissionForRole(permission, roleName);
+        if (option.toggleCallback) option.toggleCallback();
     });
 }
-function loadRoleSection(roleName, permissions) {
-    return createPanel(roleName, document.createElement("div"), async (header, body) => {
-        const role = await fetchPlugin(roleName);
-        header.textContent = roleName;
+function loadRoleSection(role, permissions, users) {
+    return createPanel(role.name, document.createElement("div"), async (header, body) => {
+        header.textContent = role.name;
         body.innerHTML = `
+<p>${role.description}</p>
 <h2>Zugriffsberechtigungen</h2>
 
 <div class="dlcontainer">
     <div class="dlist">
         <h3>Verfügbar</h3>
-        <select class="available" multiple size="12"></select>
+        <select class="available permission-select" multiple size="12"></select>
+    </div>
+    <div class="dlbuttons">
+        <button class="to-right">&gt;</button>
+        <button class="to-left">&lt;</button>
+    </div>
+    <div class="dlist">
+        <h3>Ausgewählt</h3>
+        <select class="selected permission-select" multiple size="12"></select>
+    </div>
+</div>
+
+<h2>Zugewiesene Nutzer</h2>
+<div class="dlcontainer">
+    <div class="dlist">
+        <h3>Verfügbar</h3>
+        <select class="available user-select" multiple size="12"></select>
     </div>
     <div class="dlbuttons">
         <button class="to-right">&gt;</button>
@@ -40,23 +64,47 @@ function loadRoleSection(roleName, permissions) {
         <select class="selected" multiple size="12"></select>
     </div>
 </div>
+
         `;
-        const select = body.getElementsByClassName(available)[0];
+        const permission_selects = Array.from(body.getElementsByClassName('permission-select'));
         permissions.forEach((p) => {
             const perm_option = document.createElement('option');
             perm_option.textContent = p.name;
             perm_option.setAttribute('title', p.description);
-            perm_option.value = roleName + "." + p.name;
+            perm_option.value = p.name;
+            perm_option.toggleCallback = () => {
+                togglePermissionForRole(p, role);
+            }
+            if (role.permissions.some((p1) => p1 === p)) {
+                permission_selects[1].appendChild(perm_option);
+            } else {
+                permission_selects[0].appendChild(perm_option);
+            }
+        });
+        const user_selects = Array.from(body.getElementsByClassName('user-select'));
+        users.forEach((user_name) => {
+            const user_option = document.createElement('option');
+            user_option.textContent = user_name;
+            user_option.value = user_name;
+            user_option.toggleCallback = () => {
+                toggleRoleForUser(user_name, role);
+            }
+            if (fetchRoleNode(role.name, user_name).active) {
+                user_selects[1].appendChild(user_option);
+            } else {
+                user_selects[0].appendChild(user_option);
+            }
         });
     })
 }
-async function loadPluginsView(rolesContainer) {
-    const roleNames = fetchRoleNames();
+async function loadRolesView(rolesContainer) {
+    const roles = fetchRoles();
     const permissions = fetchPermissions();
-    (await roleNames).forEach(async roleName => {
-        const pluginSection = loadRoleSection(roleName, permissions);
-        role_panels[roleName] = pluginSection;
-        rolesContainer.appendChild(pluginSection);
+    const users = fetchUsers();
+    (await roles).forEach(async role => {
+        const roleSection = loadRoleSection(role, await permissions, await users);
+        role_panels[role.name] = roleSection;
+        rolesContainer.appendChild(roleSection);
     });
     document.querySelectorAll(".dlcontainer").forEach(container => {
         const available = container.querySelector(".available");
