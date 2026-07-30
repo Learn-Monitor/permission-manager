@@ -30,7 +30,7 @@ public class RestrictionTypeHelper {
 
             String restriction = args[0];
             
-            if (restriction == "part_of") {
+            if (restriction.equals("part_of")) {
                 SchoolClass schoolClass = SchoolClassGeneric.getInstance().getSchoolClass(args[1]);
                 if (schoolClass == null) {
                     PermissionManager.getInstance().getLogger().warn("SchoolClass not found: {}", args[1]);
@@ -55,13 +55,18 @@ public class RestrictionTypeHelper {
                 apiPostRequest = APIPostRequest.fromPostRequest(request);
             }
 
-            Subject subject = apiPostRequest.getSubject();
+            Subject subject;
+            try {
+                subject = apiPostRequest.getSubject();
+            } catch (NullPointerException e) {
+                return "grant".equals(fieldMissingBehavior);
+            }
 
             if (subject == null) return "grant".equals(fieldMissingBehavior);
 
             String restriction = args[0];
             
-            if (restriction == "is") {
+            if (restriction.equals("is")) {
                 Subject restrictionSubject = SubjectGeneric.getInstance().getSubject(args[1]);
                 if (restrictionSubject == null) {
                     PermissionManager.getInstance().getLogger().warn("Subject not found: {}", args[1]);
@@ -92,7 +97,7 @@ public class RestrictionTypeHelper {
 
             String restriction = args[0];
             
-            if (restriction == "is") {
+            if (restriction.equals("is")) {
                 SchoolClass restrictionClass = SchoolClassGeneric.getInstance().getSchoolClass(args[1]);
                 if (restrictionClass == null) {
                     PermissionManager.getInstance().getLogger().warn("School class not found: {}", args[1]);

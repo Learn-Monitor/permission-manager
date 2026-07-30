@@ -32,6 +32,37 @@
             "generate_generic": true
         },
         {
+            "name": "change_student_data.$schoolClass.$subject",
+            "description": "Allows changing student data.",
+            "paths": [
+                "/subject-request",
+                "/change-current-topic",
+                "/complete-task",
+                "/cancel-task",
+                "/lock-task",
+                "/reopen-task",
+                "/begin-task"
+            ],
+            "post_restrictions": [
+                {
+                    "type": "student",
+                    "restriction": "part_of.$schoolClass",
+                    "field_missing_behavior": "grant"
+                },
+                {
+                    "type": "subject",
+                    "restriction": "is.$subject",
+                    "field_missing_behavior": "grant"
+                }
+            ],
+            "depends": [
+                "standard_files",
+                "view_student_data.$schoolClass.$subject"
+            ],
+            "default": "admin",
+            "generate_generic": true
+        },
+        {
             "name": "change_student_graduation.$schoolClass",
             "description": "Allows changing a student's graduation.",
             "paths": [
@@ -122,13 +153,27 @@
             "name": "dashboard",
             "description": "Allows viewing the dashboard. This should be set to true for all logged in users.",
             "paths": [
-                "/dashboard"
+                "/dashboard",
+                "/build_dashboard.js"
             ],
             "post_restrictions": [],
             "depends": [
                 "standard_files"
             ],
             "default": "user"
+        },
+        {
+            "name": "partner_search",
+            "description": "Allows viewing the partner search page",
+            "paths": [
+                "/partner_search",
+                "/build_partner_search.js"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "student"
         },
         {
             "name": "fetch_subjects",
@@ -264,6 +309,33 @@
                 "standard_files"
             ],
             "default": "admin"
+        },
+        {
+            "name": "fetch_own_data",
+            "description": "Allows fetching the user's own data.",
+            "paths": [
+                "/mydata",
+                "/mysubjects",
+                "/myclasses"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
+        },
+        {
+            "name": "student",
+            "description": "Allows choosing tasks, and cancelling them.",
+            "paths": [
+                "/begin-task",
+                "/cancel-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
         }
     ]
 }
