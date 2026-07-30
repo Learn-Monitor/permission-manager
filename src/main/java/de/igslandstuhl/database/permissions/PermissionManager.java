@@ -1,5 +1,8 @@
 package de.igslandstuhl.database.permissions;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
 import de.igslandstuhl.database.api.Subject;
@@ -22,7 +25,7 @@ public class PermissionManager extends Plugin {
 
     private final Registry<String, Permission> permissionRegistry = new Registry<>();
     private final Registry<Permission, PermissionEffect> permissionEffectRegistry = new Registry<>();
-    private final Registry<String, Role> roleRegistry = new Registry<>();
+    private final Map<String, Role> roles = new HashMap<>();
 
     public PermissionManager() {
         instance = this;
@@ -46,8 +49,8 @@ public class PermissionManager extends Plugin {
     public Registry<Permission, PermissionEffect> permissionEffectRegistry() {
         return permissionEffectRegistry;
     }
-    public Registry<String, Role> roleRegistry() {
-        return roleRegistry;
+    public Map<String, Role> getRoles() {
+        return roles;
     }
 
     @Override
@@ -100,6 +103,12 @@ public class PermissionManager extends Plugin {
             return Role.getAll()
             .toString();
         });
+        Registry.sqlRequestHandlerRegistry().register("list-users", (u) -> {
+            return User.getAllUsers()
+            .stream()
+            .map((u1) -> '"' + u1.getUsername() + '"')
+            .toList().toString();
+        });
         HttpHandler.registerPostRequestHandler("/toggle-permission", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));
             Permission permission = Permission.getByName(rq.getString("permission"));
@@ -124,6 +133,27 @@ public class PermissionManager extends Plugin {
                 return PostResponse.badRequest("User or role does not exist", rq);
             }
         });
+        HttpHandler.registerPostRequestHandler("/toggle-role-permission", AccessLevel.ADMIN, (rq) -> {
+            Permission permission = Permission.getByName(rq.getString("permission"));
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (permission != null && role != null) {
+                role.togglePermission(permission);
+                UserEffect.registerAll();
+                return PostResponse.ok("Successfully toggled permission for role " + role.getName(), ContentType.TEXT_PLAIN, rq);
+            } else {
+                return PostResponse.badRequest("Permission or role does not exist", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/get-role", AccessLevel.ADMIN, (rq) -> {
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (role != null) {
+                return PostResponse.ok(role.toString(), ContentType.JSON, rq);
+            } else {
+                return PostResponse.badRequest("Role does not exist", rq);
+            }
+        });
         HttpHandler.registerPostRequestHandler("/get-permission-node", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));
             Permission permission = Permission.getByName(rq.getString("permission"));
@@ -144,6 +174,27 @@ public class PermissionManager extends Plugin {
                 return PostResponse.ok(node.toString(), ContentType.JSON, rq);
             } else {
                 return PostResponse.badRequest("User or role does not exist", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/add-role", AccessLevel.ADMIN, (rq) -> {
+            String name = rq.getString("name");
+            String description = rq.getString("description");
+
+            if (name != null && description != null) {
+                Role.getByNameOrCreate(name, description);
+                return PostResponse.redirect("/manage_permissions", rq);
+            } else {
+                return PostResponse.badRequest("Either name or description are not present.", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/delete-role", AccessLevel.ADMIN, (rq) -> {
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (role != null) {
+                role.delete();
+                return PostResponse.ok("Successfully deleted role", ContentType.TEXT_PLAIN, rq);
+            } else {
+                return PostResponse.badRequest("Role does not exist", rq);
             }
         });
         getLogger().info("Adding access listener...");

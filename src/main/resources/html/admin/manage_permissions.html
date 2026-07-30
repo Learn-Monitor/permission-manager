@@ -1,0 +1,24 @@
+%[site;title=Nutzerrollen verwalten;content=!FOLLOWS]
+<section id="dashboard">
+    <header>
+        <h1>Rollen</h1>
+    </header>
+    <p>Willkommen in der Nutzerrollen-Ansicht</p>
+    <section id="roles"></section>
+    <section id="add-roles">
+        <h2>Rollen hinzufügen</h2>
+        <form method="post" action="/add-role">
+            <label for="role-name">Name:</label>
+            <input id="role-name" name="name">
+            <label for="role-description">Beschreibung:</label>
+            <input id="role-description" name="description">
+            <button type="submit">Absenden</button>
+        </form>
+    </section>
+    <script>
+        loadRolesView(document.getElementById("roles"));
+    </script>
+    <nav>
+        %[admin_nav]
+    </nav>
+</section>

@@ -1,0 +1,7 @@
+[
+    {
+        "type": "ADMIN_DASHBOARD",
+        "path": "/manage_permissions",
+        "label": "Zugriffsrechte verwalten"
+    }
+]
