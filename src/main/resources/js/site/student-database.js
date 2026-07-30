@@ -61,7 +61,7 @@ function loadRoleSection(role, permissions, users) {
     </div>
     <div class="dlist">
         <h3>Ausgewählt</h3>
-        <select class="selected" multiple size="12"></select>
+        <select class="selected user-select" multiple size="12"></select>
     </div>
 </div>
 
@@ -73,27 +73,48 @@ function loadRoleSection(role, permissions, users) {
             perm_option.setAttribute('title', p.description);
             perm_option.value = p.name;
             perm_option.toggleCallback = () => {
-                togglePermissionForRole(p, role);
+                togglePermissionForRole(p.name, role.name);
             }
-            if (role.permissions.some((p1) => p1 === p)) {
+            if (role.permissions.some((p1) => p1.name == p.name)) {
                 permission_selects[1].appendChild(perm_option);
             } else {
                 permission_selects[0].appendChild(perm_option);
             }
         });
         const user_selects = Array.from(body.getElementsByClassName('user-select'));
-        users.forEach((user_name) => {
+        users.forEach(async (user_name) => {
             const user_option = document.createElement('option');
             user_option.textContent = user_name;
             user_option.value = user_name;
             user_option.toggleCallback = () => {
-                toggleRoleForUser(user_name, role);
+                toggleRoleForUser(user_name, role.name);
             }
-            if (fetchRoleNode(role.name, user_name).active) {
+            const node = await fetchRoleNode(role.name, user_name);
+            if (node && node.active) {
                 user_selects[1].appendChild(user_option);
             } else {
                 user_selects[0].appendChild(user_option);
             }
+        });
+        body.querySelectorAll(".dlcontainer").forEach(container => {
+            const available = container.querySelector(".available");
+            const selected = container.querySelector(".selected");
+
+            container.querySelector(".to-right").addEventListener("click", () => {
+                moveSelected(available, selected);
+            });
+
+            container.querySelector(".to-left").addEventListener("click", () => {
+                moveSelected(selected, available);
+            });
+
+            available.addEventListener("dblclick", () => {
+                moveSelected(available, selected);
+            });
+
+            selected.addEventListener("dblclick", () => {
+                moveSelected(selected, available);
+            });
         });
     })
 }
@@ -105,25 +126,5 @@ async function loadRolesView(rolesContainer) {
         const roleSection = loadRoleSection(role, await permissions, await users);
         role_panels[role.name] = roleSection;
         rolesContainer.appendChild(roleSection);
-    });
-    document.querySelectorAll(".dlcontainer").forEach(container => {
-        const available = container.querySelector(".available");
-        const selected = container.querySelector(".selected");
-
-        container.querySelector(".to-right").addEventListener("click", () => {
-            moveSelected(available, selected);
-        });
-
-        container.querySelector(".to-left").addEventListener("click", () => {
-            moveSelected(selected, available);
-        });
-
-        available.addEventListener("dblclick", () => {
-            moveSelected(available, selected);
-        });
-
-        selected.addEventListener("dblclick", () => {
-            moveSelected(selected, available);
-        });
     });
 }
