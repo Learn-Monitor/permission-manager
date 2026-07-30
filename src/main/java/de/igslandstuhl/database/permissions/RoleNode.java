@@ -52,6 +52,16 @@ public class RoleNode {
         }
     }
 
+    private void insertIntoDatabase() {
+        try {
+            Server.getInstance().getConnection().executeVoidProcessSecure(
+                SQLHelper.getAddObjectProcess("user_role", username, role.getName())
+            );
+        } catch (SQLException e) {
+            PermissionManager.getInstance().getLogger().error("Failed to insert RoleNode for user \"{}\" and role \"{}\" to database", username, role.getName(), e);
+        }
+    }
+
     public static RoleNode getRoleNode(String username, Role role) {
         RoleNode node = cache.stream()
             .filter((r) -> r.getUsername().equals(username) && r.getRole().equals(role))
@@ -78,6 +88,7 @@ public class RoleNode {
 
         if (node == null) {
             node = new RoleNode(role, username, false);
+            node.insertIntoDatabase();
         }
         cache.add(node);
         return node;

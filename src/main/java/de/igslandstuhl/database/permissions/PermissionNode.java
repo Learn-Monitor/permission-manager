@@ -54,6 +54,16 @@ public class PermissionNode {
         }
     }
 
+    private void insertIntoDatabase() {
+        try {
+            Server.getInstance().getConnection().executeVoidProcessSecure(
+                SQLHelper.getAddObjectProcess("permission_node", username, permission.getName())
+            );
+        } catch (SQLException e) {
+            PermissionManager.getInstance().getLogger().error("Failed to insert PermissionNode for user \"{}\" and permission \"{}\" to database", username, permission.getName(), e);
+        }
+    }
+
     public static PermissionNode getPermissionNode(String username, Permission permission) {
         PermissionNode node = cache.stream().filter((p) -> p.getUsername().equals(username) && p.getPermission().equals(permission)).findAny().orElse(null);
         if (node != null) return node;
@@ -94,6 +104,7 @@ public class PermissionNode {
                     break;
             }
             node = new PermissionNode(permission, username, active);
+            node.insertIntoDatabase();
         }
         cache.add(node);
         return node;
