@@ -5,7 +5,7 @@ plugins {
 
 group = "io.github.learn-monitor"
 
-version = "v1.0.0-SNAPSHOT"
+version = "v1.0.0"
 
 repositories {
     mavenCentral()
