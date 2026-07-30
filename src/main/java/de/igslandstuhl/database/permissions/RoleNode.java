@@ -96,20 +96,12 @@ public class RoleNode {
 
     public static List<Role> getUserRoles(String username) {
         List<Role> userRoles = new LinkedList<>();
-        try {
-            Server.getInstance().processRequest(
-                fields -> {
-                    Role role = Role.getByName(fields[0]);
-                    if (role != null) {
-                        userRoles.add(role);
-                    }
-                },
-                "get_user_roles",
-                new String[] {"role"},
-                username)
-            ;
-        } catch (SQLException e) {
-            PermissionManager.getInstance().getLogger().error("Failed to retrieve roles for user \"{}\"", username, e);
+        // Build roles from cached RoleNodes to avoid asynchronous DB callback ordering issues.
+        for (Role role : Role.getAll()) {
+            RoleNode node = getRoleNode(username, role);
+            if (node != null && node.isActive()) {
+                userRoles.add(role);
+            }
         }
         return userRoles;
     }
