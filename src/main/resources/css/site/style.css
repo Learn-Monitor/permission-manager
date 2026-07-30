@@ -51,3 +51,10 @@
         height: 30vh;
     }
 }
+
+.panel h4 {
+    font-size: 1.5rem;
+}
+.panel h5 {
+    font-size: 1.25rem;
+}
