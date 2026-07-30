@@ -122,13 +122,27 @@
             "name": "dashboard",
             "description": "Allows viewing the dashboard. This should be set to true for all logged in users.",
             "paths": [
-                "/dashboard"
+                "/dashboard",
+                "/build_dashboard.js"
             ],
             "post_restrictions": [],
             "depends": [
                 "standard_files"
             ],
             "default": "user"
+        },
+        {
+            "name": "partner_search",
+            "description": "Allows viewing the partner search page",
+            "paths": [
+                "/partner_search",
+                "/build_partner_search.js"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "student"
         },
         {
             "name": "fetch_subjects",
@@ -264,6 +278,20 @@
                 "standard_files"
             ],
             "default": "admin"
+        },
+        {
+            "name": "fetch_own_data",
+            "description": "Allows fetching the user's own data.",
+            "paths": [
+                "/mydata",
+                "/mysubjects",
+                "/myclasses"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
         }
     ]
 }
