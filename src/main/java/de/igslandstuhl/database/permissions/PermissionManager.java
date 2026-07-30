@@ -173,6 +173,17 @@ public class PermissionManager extends Plugin {
                 return PostResponse.badRequest("User or role does not exist", rq);
             }
         });
+        HttpHandler.registerPostRequestHandler("/add-role", AccessLevel.ADMIN, (rq) -> {
+            String name = rq.getString("name");
+            String description = rq.getString("description");
+
+            if (name != null && description != null) {
+                Role.getByNameOrCreate(name, description);
+                return PostResponse.redirect("/manage_permissions", rq);
+            } else {
+                return PostResponse.badRequest("User or permission does not exist", rq);
+            }
+        });
         getLogger().info("Adding access listener...");
         AccessListener.getInstance().register();
         getLogger().info("permission-manager successfully loaded.");

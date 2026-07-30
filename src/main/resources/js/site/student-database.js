@@ -32,11 +32,11 @@ function loadRoleSection(role, permissions, users) {
         header.textContent = role.name;
         body.innerHTML = `
 <p>${role.description}</p>
-<h2>Zugriffsberechtigungen</h2>
+<h3>Zugriffsberechtigungen</h2>
 
 <div class="dlcontainer">
     <div class="dlist">
-        <h3>Verfügbar</h3>
+        <h4>Verfügbar</h3>
         <select class="available permission-select" multiple size="12"></select>
     </div>
     <div class="dlbuttons">
@@ -44,15 +44,15 @@ function loadRoleSection(role, permissions, users) {
         <button class="to-left">&lt;</button>
     </div>
     <div class="dlist">
-        <h3>Ausgewählt</h3>
+        <h4>Ausgewählt</h3>
         <select class="selected permission-select" multiple size="12"></select>
     </div>
 </div>
 
-<h2>Zugewiesene Nutzer</h2>
+<h3>Zugewiesene Nutzer</h2>
 <div class="dlcontainer">
     <div class="dlist">
-        <h3>Verfügbar</h3>
+        <h4>Verfügbar</h3>
         <select class="available user-select" multiple size="12"></select>
     </div>
     <div class="dlbuttons">
@@ -60,7 +60,7 @@ function loadRoleSection(role, permissions, users) {
         <button class="to-left">&lt;</button>
     </div>
     <div class="dlist">
-        <h3>Ausgewählt</h3>
+        <h4>Ausgewählt</h3>
         <select class="selected user-select" multiple size="12"></select>
     </div>
 </div>

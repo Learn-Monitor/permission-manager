@@ -255,7 +255,8 @@
                 "/toggle-role",
                 "/toggle-role-permission",
                 "/get-permission-node",
-                "/get-role-node"
+                "/get-role-node",
+                "/add-role"
             ],
             "post_restrictions": [],
             "depends": [
