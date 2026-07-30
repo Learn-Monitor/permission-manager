@@ -19,6 +19,11 @@ async function toggleRoleForUser(user, role) {
 async function togglePermissionForRole(permission, roleName) {
     return await post('/toggle-role-permission', { permission, role: roleName });
 }
+async function deleteRole(roleName) {
+    const res = await post('/delete-role', { role: roleName });
+    window.location.reload();
+    return res;
+}
 let role_panels = {}
 // For the dual list
 function moveSelected(from, to) {
@@ -65,6 +70,7 @@ function loadRoleSection(role, permissions, users) {
     </div>
 </div>
 
+<button onclick="deleteRole('${role.name}')">Rolle löschen</button>
         `;
         const permission_selects = Array.from(body.getElementsByClassName('permission-select'));
         permissions.forEach((p) => {

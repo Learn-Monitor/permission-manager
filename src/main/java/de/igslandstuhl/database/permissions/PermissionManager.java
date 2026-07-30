@@ -1,5 +1,8 @@
 package de.igslandstuhl.database.permissions;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
 import de.igslandstuhl.database.api.Subject;
@@ -22,7 +25,7 @@ public class PermissionManager extends Plugin {
 
     private final Registry<String, Permission> permissionRegistry = new Registry<>();
     private final Registry<Permission, PermissionEffect> permissionEffectRegistry = new Registry<>();
-    private final Registry<String, Role> roleRegistry = new Registry<>();
+    private final Map<String, Role> roles = new HashMap<>();
 
     public PermissionManager() {
         instance = this;
@@ -46,8 +49,8 @@ public class PermissionManager extends Plugin {
     public Registry<Permission, PermissionEffect> permissionEffectRegistry() {
         return permissionEffectRegistry;
     }
-    public Registry<String, Role> roleRegistry() {
-        return roleRegistry;
+    public Map<String, Role> getRoles() {
+        return roles;
     }
 
     @Override
@@ -181,7 +184,17 @@ public class PermissionManager extends Plugin {
                 Role.getByNameOrCreate(name, description);
                 return PostResponse.redirect("/manage_permissions", rq);
             } else {
-                return PostResponse.badRequest("User or permission does not exist", rq);
+                return PostResponse.badRequest("Either name or description are not present.", rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/delete-role", AccessLevel.ADMIN, (rq) -> {
+            Role role = Role.getByName(rq.getString("role"));
+
+            if (role != null) {
+                role.delete();
+                return PostResponse.ok("Successfully deleted role", ContentType.TEXT_PLAIN, rq);
+            } else {
+                return PostResponse.badRequest("Role does not exist", rq);
             }
         });
         getLogger().info("Adding access listener...");

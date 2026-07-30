@@ -54,7 +54,12 @@ public class Role {
 
     public void register() {
         PermissionManager permissionManager = PermissionManager.getInstance();
-        permissionManager.roleRegistry().register(getName(), this);
+        permissionManager.getRoles().put(getName(), this);
+    }
+
+    public void delete() {
+        PermissionManager permissionManager = PermissionManager.getInstance();
+        permissionManager.getRoles().remove(getName());
     }
 
     public static void registerAll(Role... roles) {
@@ -70,7 +75,7 @@ public class Role {
     }
 
     public static Role getByName(String name) {
-        return PermissionManager.getInstance().roleRegistry().get(name);
+        return PermissionManager.getInstance().getRoles().get(name);
     }
 
     public static Role getByNameOrCreate(String name, String description) {
@@ -83,7 +88,7 @@ public class Role {
     }
 
     public static List<Role> getAll() {
-        return PermissionManager.getInstance().roleRegistry().keyStream().map(Role::getByName).toList();
+        return PermissionManager.getInstance().getRoles().keySet().stream().map(Role::getByName).toList();
     }
 
     @Override
