@@ -27,11 +27,11 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.2")
 
     // Main project
-    compileOnly("io.github.learn-monitor:student-database:s2607b5-SNAPSHOT")
+    compileOnly("io.github.learn-monitor:student-database:v2.0.0")
     compileOnly("io.github.learn-monitor:plugin-loader:v1.0.6")
 
     // For debugging
-    runtimeOnly("io.github.learn-monitor:student-database:s2607b5-SNAPSHOT")
+    runtimeOnly("io.github.learn-monitor:student-database:v2.0.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.13.4") // using JUnit 5 (latest)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

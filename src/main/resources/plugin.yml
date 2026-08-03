@@ -4,3 +4,4 @@ description: Manages permissions for users.
 main: de.igslandstuhl.database.permissions.PermissionManager
 depends:
   - plugin-loader
+apiVersion: 1
