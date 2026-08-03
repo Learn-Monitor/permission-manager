@@ -77,7 +77,7 @@ mavenPublishing {
 // For deploying the plugin jar to the debug-run/plugins directory for testing
 tasks.withType<Jar> {
     manifest {
-        attributes["Implementation-Title"] = "Example Plugin"
+        attributes["Implementation-Title"] = "Permission Manager"
         attributes["Implementation-Version"] = project.version
     }
 }
