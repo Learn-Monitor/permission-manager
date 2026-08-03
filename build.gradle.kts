@@ -58,11 +58,18 @@ mavenPublishing {
     pom {
         name = "Permission Manager"
         description = "Permission Manager for the Student Database project"
+        url = "https://github.com/Learn-Monitor/permission-manager"
+
         licenses {
             license {
                 name = "GNU General Public License v3.0"
                 url = "http://www.gnu.org/licenses/gpl-3.0.txt"
             }
+        }
+        scm {
+            url = "https://github.com/Learn-Monitor/permission-manager"
+            connection = "scm:git:https://github.com/Learn-Monitor/permission-manager.git"
+            developerConnection = "scm:git:ssh://git@github.com/Learn-Monitor/permission-manager.git"
         }
         developers {
             developer {
