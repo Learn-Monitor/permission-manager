@@ -37,6 +37,12 @@ public class UserEffect {
             return access ? AccessState.AUTHORIZED : AccessState.RESTRICTED;
         }
     }
+    public Permission[] getPermissions() {
+        return Arrays.stream(effects)
+            .map(PermissionEffect::permission)
+            .toArray(Permission[]::new);
+    }
+
     public void register() {
         registry.register(user, this);
     }

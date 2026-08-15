@@ -1,5 +1,6 @@
 package de.igslandstuhl.database.permissions;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -108,6 +109,16 @@ public class PermissionManager extends Plugin {
             .stream()
             .map((u1) -> '"' + u1.getUsername() + '"')
             .toList().toString();
+        });
+        Registry.sqlRequestHandlerRegistry().register("get-permissions", (u) -> {
+            UserEffect effect = UserEffect.get(u);
+            if (effect == null) {
+                return "[]";
+            }
+            return Arrays.stream(effect.getPermissions())
+                .map(Permission::toString)
+                .toList()
+                .toString();
         });
         HttpHandler.registerPostRequestHandler("/toggle-permission", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));

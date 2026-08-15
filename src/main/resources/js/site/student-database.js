@@ -1,3 +1,26 @@
+let currentPermissions = [];
+
+async function fetchCurrentPermissions() {
+    return await getJson('/get-permissions');
+}
+
+async function loadCurrentPermissions() {
+    try {
+        currentPermissions = await fetchCurrentPermissions();
+    } catch (error) {
+        console.error('Failed to load current user permissions', error);
+        currentPermissions = [];
+    }
+    return currentPermissions;
+}
+
+const permissionsLoaded = loadCurrentPermissions();
+
+async function hasPermission(permission) {
+    await permissionsLoaded;
+    return currentPermissions.some((p) => p.name === permission);
+}
+
 async function fetchPermissions() {
     return await getJson('/list-permissions');
 }

@@ -20,6 +20,13 @@
         "context": "virtual",
         "access_level": "admin"
     },
+    "/get-permissions": {
+        "type": "GET",
+        "handler_type": "SQLRequestHandler",
+        "namespaces": [ "sql" ],
+        "context": "virtual",
+        "access_level": "user"
+    },
     "/manage_permissions": {
         "type": "GET",
         "handler_type": "TemplatingFileRequestHandler",
