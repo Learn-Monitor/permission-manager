@@ -57,7 +57,7 @@ public class PermissionNode {
     private void insertIntoDatabase() {
         try {
             Server.getInstance().getConnection().executeVoidProcessSecure(
-                SQLHelper.getAddObjectProcess("permission_node", username, permission.getName())
+                SQLHelper.getAddObjectProcess("permission_node", permission.getName(), username, String.valueOf(active))
             );
         } catch (SQLException e) {
             PermissionManager.getInstance().getLogger().error("Failed to insert PermissionNode for user \"{}\" and permission \"{}\" to database", username, permission.getName(), e);
