@@ -326,16 +326,27 @@
         },
         {
             "name": "student",
-            "description": "Allows choosing tasks, and cancelling them.",
+            "description": "Allows choosing tasks.",
             "paths": [
-                "/begin-task",
-                "/cancel-task"
+                "/begin-task"
             ],
             "post_restrictions": [],
             "depends": [
                 "standard_files"
             ],
             "default": "user"
+        },
+        {
+            "name": "cancel_task",
+            "description": "Allows cancelling tasks.",
+            "paths": [
+                "/cancel-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "teacher"
         }
     ]
 }

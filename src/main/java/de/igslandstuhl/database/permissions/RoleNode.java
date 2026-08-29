@@ -55,7 +55,7 @@ public class RoleNode {
     private void insertIntoDatabase() {
         try {
             Server.getInstance().getConnection().executeVoidProcessSecure(
-                SQLHelper.getAddObjectProcess("user_role", username, role.getName())
+                SQLHelper.getAddObjectProcess("user_role", username, role.getName(), String.valueOf(active))
             );
         } catch (SQLException e) {
             PermissionManager.getInstance().getLogger().error("Failed to insert RoleNode for user \"{}\" and role \"{}\" to database", username, role.getName(), e);
