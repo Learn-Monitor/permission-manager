@@ -1,6 +1,7 @@
 package de.igslandstuhl.database.permissions;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -21,6 +22,33 @@ class DefaultPermissionConfigTest {
         assertTrue(defaultsForPath(permissions, "/cancel-task").contains("user"));
         assertFalse(defaultsForPath(permissions, "/cancel-task").stream()
             .anyMatch(level -> level.equals("student")));
+    }
+
+    @Test
+    void arcanumRoutesPreserveRoleBoundaries() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+
+        assertTrue(defaultsForPath(permissions, "/results").contains("student"));
+        assertTrue(defaultsForPath(permissions, "/search-partner").contains("student"));
+        assertTrue(defaultsForPath(permissions, "/cancel-task").contains("user"));
+
+        assertEquals(List.of("teacher"), defaultsForPath(permissions, "/attendance"));
+        assertEquals(List.of("admin"), defaultsForPath(permissions, "/attendance-admin"));
+        assertFalse(defaultsForPath(permissions, "/attendance-admin").contains("teacher"));
+        assertFalse(defaultsForPath(permissions, "/attendance").stream()
+            .anyMatch(level -> level.equals("student") || level.equals("user") || level.equals("public")));
+    }
+
+    @Test
+    void attendanceCheckinAndSignageRemainPublic() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+
+        assertEquals(List.of("public"), defaultsForPath(permissions, "/attendance-checkin"));
+        assertEquals(List.of("public"), defaultsForPath(permissions, "/attendance-display"));
+        assertEquals(List.of("public"), defaultsForPath(permissions, "/attendance-display-token"));
+        assertEquals(List.of("public"), defaultsForPath(permissions, "/attendance-signage-token"));
+        assertTrue(defaultsForPath(permissions, "/attendance-pending").isEmpty());
+        assertTrue(defaultsForPath(permissions, "/attendance-resume").isEmpty());
     }
 
     @SuppressWarnings("unchecked")
