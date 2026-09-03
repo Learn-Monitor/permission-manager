@@ -90,18 +90,12 @@ public class PermissionNode {
             User user = User.getUser(username);
             boolean active = false;
             switch (defaultLevel) {
-                case ADMIN:
-                    if (!user.isAdmin()) break;
-                case TEACHER:
-                    if (!(user.isTeacher() || user.isAdmin())) break;
-                case STUDENT:
-                case USER:
-                    if (!(user.isStudent() || user.isTeacher() || user.isAdmin())) break;
-                case PUBLIC:
-                    active = true;
-                    break;
-                default:
-                    break;
+                case ADMIN -> active = user.isAdmin();
+                case TEACHER -> active = user.isTeacher() || user.isAdmin();
+                case STUDENT -> active = user.isStudent();
+                case USER -> active = user.isStudent() || user.isTeacher() || user.isAdmin();
+                case PUBLIC -> active = true;
+                default -> active = false;
             }
             node = new PermissionNode(permission, username, active);
             node.insertIntoDatabase();
