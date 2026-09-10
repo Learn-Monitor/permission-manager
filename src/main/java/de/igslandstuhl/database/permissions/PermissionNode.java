@@ -89,6 +89,7 @@ public class PermissionNode {
             AccessLevel defaultLevel = PermissionManager.getInstance().permissionEffectRegistry().get(permission).defaultLevel();
             User user = User.getUser(username);
             boolean active = isDefaultActive(defaultLevel, user);
+            active = active && PermissionManager.getInstance().permissionEffectRegistry().get(permission).isDefaultEligible(user);
             node = new PermissionNode(permission, username, active);
             node.insertIntoDatabase();
         }

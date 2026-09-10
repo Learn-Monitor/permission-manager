@@ -37,6 +37,11 @@ class CurriculumPermissionTest {
         "curriculum_manage_central", List.of("/add-curriculum-topic", "/rename-topic",
             "/add-curriculum-task", "/edit-task"));
 
+    private static final Map<String,List<String>> CONTEXT_ROUTES = Map.of(
+        "curriculum_student_progress",List.of("/my-curriculum-progress"),
+        "curriculum_assign_context",List.of("/curriculum-students","/assign-curriculum-context",
+            "/curriculum-transfer-preview","/transfer-curriculum-context"));
+
     private Connection database;
     private PermissionManager manager;
     private ResourceManager resources;
@@ -234,7 +239,7 @@ class CurriculumPermissionTest {
     @Test
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
-            .filter(p -> !ROUTES.containsKey(p.getName()))
+            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()))
             .map(manager.permissionEffectRegistry()::get).toList();
         for (User user : List.of(teacher, admin, student, User.ANONYMOUS)) {
             var active = legacy.stream().filter(e -> user == User.ANONYMOUS
@@ -250,6 +255,139 @@ class CurriculumPermissionTest {
                         user.getUsername() + ": " + path);
                 });
         }
+    }
+
+    @Test
+    void contextDefaultsMatchBackendRolesWithoutTeacherOrAnonymousGrants() {
+        for(User user:List.of(student,teacher,admin,User.ANONYMOUS)) {
+            CONTEXT_ROUTES.forEach((name,paths)->{
+                boolean allowed=name.equals("curriculum_student_progress") ? user==student : user==admin;
+                if(user!=User.ANONYMOUS)assertEquals(allowed,node(user,name).isActive(),user.getUsername()+": "+name);
+                assertEquals(allowed,effectiveNames(user).contains(name));
+                paths.forEach(path->assertContextAccess(user,path,RequestType.POST,allowed));
+            });
+        }
+        assertFalse(effectiveNames(student).contains("curriculum_view"));
+    }
+
+    @Test
+    void discoveredBackendRoutesHaveExactlyOneCorrectOwnerOnBothTracks() throws Exception {
+        Map<String,Map<String,Object>> tracks = new Yaml().load(resource("/contracts/student-context-routes.json"));
+        assertEquals(Set.of("upstream","canonical-v2"),tracks.keySet());
+        List<Map<String,Object>> permissions=Stream.of("flat","generics").flatMap(k->((List<Map<String,Object>>)configUnchecked().get(k)).stream()).toList();
+        Set<String> expected=new HashSet<>();CONTEXT_ROUTES.values().forEach(expected::addAll);
+        for(var track:tracks.values()) {
+            Map<String,Map<String,String>> before=(Map)track.get("before"),after=(Map)track.get("after");
+            Set<String> added=new HashSet<>();
+            for(String method:List.of("GET","POST")) {
+                Set<String> paths=new HashSet<>(after.get(method).keySet());paths.removeAll(before.get(method).keySet());
+                if(method.equals("GET"))assertTrue(paths.isEmpty());
+                for(String path:paths) {
+                    var owners=permissions.stream().filter(p->((List<?>)p.get("paths")).contains(path)).toList();
+                    assertEquals(1,owners.size(),path);
+                    var owner=owners.get(0);String name=(String)owner.get("name");
+                    assertTrue(CONTEXT_ROUTES.getOrDefault(name,List.of()).contains(path));
+                    assertEquals(after.get(method).get(path),owner.get("default"));
+                    assertTrue(Set.of("student","admin").contains(owner.get("default")));
+                    assertEquals(List.of("POST"),owner.get("allowed_methods"));
+                    if(name.equals("curriculum_student_progress"))assertEquals(true,owner.get("exact_default"));
+                    assertEquals(List.of(),owner.get("depends"));assertEquals(List.of(),owner.get("post_restrictions"));
+                    added.add(path);
+                }
+            }
+            assertEquals(expected,added);
+        }
+    }
+
+    private Map<String,Object> configUnchecked() {
+        try{return config();}catch(Exception e){throw new AssertionError(e);}
+    }
+
+    @Test
+    void newRoutesRejectGetAndUnknownMethodsWhileLegacyRulesRemainUnchanged() {
+        CONTEXT_ROUTES.forEach((name,paths)->{
+            User user=name.equals("curriculum_student_progress")?student:admin;
+            paths.forEach(path->{
+                assertContextAccess(user,path,RequestType.POST,true);
+                assertContextAccess(user,path,RequestType.GET,false);
+                assertContextAccess(user,path,null,false);
+            });
+        });
+        // Opt-in only: prior callers/configurations still have path-only behavior.
+        for(String path:List.of("/curriculum-catalog","/curriculum.js"))
+            assertContextAccess(teacher,path,RequestType.GET,true);
+    }
+
+    @Test
+    void contextFunctionsDoNotDependOnTeacherViewOrCentralManagement() {
+        node(admin,"curriculum_view").setActive(false);
+        node(admin,"curriculum_manage_central").setActive(false);
+        UserEffect.registerAll();
+        CONTEXT_ROUTES.get("curriculum_assign_context").forEach(path->assertContextAccess(admin,path,RequestType.POST,true));
+        assertContextAccess(student,"/my-curriculum-progress",RequestType.POST,true);
+        for(String name:CONTEXT_ROUTES.keySet()) {
+            var effect=manager.permissionEffectRegistry().get(Permission.getByName(name));
+            assertEquals(0,effect.depends().length);
+        }
+    }
+
+    @Test
+    void studentAndAdminRevocationsSurviveRepeatedInitializationAndColdStart() throws Exception {
+        int permissions=count("permissions"),nodes=count("permnodes");
+        node(student,"curriculum_student_progress").setActive(false);
+        node(admin,"curriculum_assign_context").setActive(false);
+        node(teacher,"curriculum_student_progress").setActive(true);
+        for(boolean cold:List.of(false,true)) {
+            if(cold){clearNodeCaches();resetRegistries();}
+            initialize();
+            assertEquals(permissions,count("permissions"));assertEquals(nodes,count("permnodes"));
+            assertEquals(permissions,Permission.getAll().size());
+            assertFalse(node(student,"curriculum_student_progress").isActive());
+            assertFalse(node(admin,"curriculum_assign_context").isActive());
+            assertTrue(node(teacher,"curriculum_student_progress").isActive());
+            assertContextAccess(teacher,"/my-curriculum-progress",RequestType.POST,true);
+            assertContextAccess(student,"/my-curriculum-progress",RequestType.POST,false);
+            CONTEXT_ROUTES.get("curriculum_assign_context").forEach(path->assertContextAccess(admin,path,RequestType.POST,false));
+        }
+    }
+
+    @Test
+    void roleGrantsForNewFunctionsRemainAdditiveAndDoNotGrantView() throws Exception {
+        node(student,"curriculum_student_progress").setActive(false);
+        Role role=Role.getByNameOrCreate("own_progress","Own progress");
+        role.addPermissions(Permission.getByName("curriculum_student_progress"));
+        database.createStatement().execute("INSERT INTO user_roles(username,role,active) VALUES('student','own_progress','true')");
+        UserEffect.registerAll();
+        assertContextAccess(student,"/my-curriculum-progress",RequestType.POST,true);
+        assertFalse(effectiveNames(student).contains("curriculum_view"));
+        RoleNode.getRoleNode("student",role).setActive(false);UserEffect.registerAll();
+        assertContextAccess(student,"/my-curriculum-progress",RequestType.POST,false);
+    }
+
+    @Test
+    void explicitGrantsOnlyAuthorizeTheFunctionAndNeverInterpretStudentIds() {
+        node(teacher,"curriculum_student_progress").setActive(true);
+        node(teacher,"curriculum_assign_context").setActive(true);UserEffect.registerAll();
+        // Backend still rejects these wrong-role calls; PM does not impersonate a student or admin.
+        CONTEXT_ROUTES.values().forEach(paths->paths.forEach(path->assertContextAccess(teacher,path,RequestType.POST,true)));
+    }
+
+    @Test
+    void emptyMethodPolicyDeniesRatherThanFallingBackToLegacy() {
+        Permission permission=new Permission("closed_method_policy","Closed");
+        new PermissionEffect(permission,new String[]{"/closed"},new de.igslandstuhl.database.permissions.restrictions.PostRestriction[0],
+            new Permission[0],AccessLevel.ADMIN,false,new RequestType[0]).register();
+        var effect=new UserEffect(admin,new Permission[]{permission});
+        HttpRequest request=mock(HttpRequest.class);when(request.getRequestType()).thenReturn(RequestType.POST);
+        assertEquals(AccessState.RESTRICTED,effect.testAccess("/closed",request));
+    }
+
+    private static void assertContextAccess(User user,String path,RequestType method,boolean allowed) {
+        HttpRequest request=method==RequestType.POST?mock(PostRequest.class):mock(HttpRequest.class);
+        when(request.getRequestType()).thenReturn(method);
+        AccessState expected=user==User.ANONYMOUS?AccessState.UNAUTHORIZED:allowed?AccessState.AUTHORIZED:AccessState.RESTRICTED;
+        assertEquals(expected,UserEffect.get(user).testAccess(path,request),user.getUsername()+": "+method+" "+path);
+        verify(request,atMostOnce()).getRequestType();verifyNoMoreInteractions(request);
     }
 
     private void initialize() {

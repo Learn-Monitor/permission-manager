@@ -772,6 +772,36 @@
                 "manage_permissions"
             ],
             "default": "admin"
+        },
+        {
+            "name": "curriculum_student_progress",
+            "description": "Allows students to read their own assigned curriculum progress.",
+            "paths": [
+                "/my-curriculum-progress"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "student",
+            "allowed_methods": [
+                "POST"
+            ],
+            "exact_default": true
+        },
+        {
+            "name": "curriculum_assign_context",
+            "description": "Allows administrators to inspect and assign student curriculum contexts and explicitly transfer completed work.",
+            "paths": [
+                "/curriculum-students",
+                "/assign-curriculum-context",
+                "/curriculum-transfer-preview",
+                "/transfer-curriculum-context"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "admin",
+            "allowed_methods": [
+                "POST"
+            ]
         }
     ]
 }

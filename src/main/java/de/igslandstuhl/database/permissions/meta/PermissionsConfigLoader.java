@@ -10,6 +10,7 @@ import de.igslandstuhl.database.permissions.generics.PermissionGeneric;
 import de.igslandstuhl.database.permissions.restrictions.PostRestriction;
 import de.igslandstuhl.database.server.Server;
 import de.igslandstuhl.database.server.webserver.access.AccessLevel;
+import de.igslandstuhl.database.server.webserver.requests.RequestType;
 
 public class PermissionsConfigLoader {
     private static PermissionsConfigLoader instance = new PermissionsConfigLoader();
@@ -32,7 +33,9 @@ public class PermissionsConfigLoader {
         .toArray((a) -> new PostRestriction[a]);
 
         AccessLevel defaultLevel = AccessLevel.valueOf(((String) permissionJSON.get("default")).toUpperCase());
-        return new PermissionEffect(permission, allowedPaths.toArray(new String[allowedPaths.size()]), restrictions, depends.stream().map(Permission::getByName).toArray((a) -> new Permission[a]), defaultLevel, Boolean.TRUE.equals(permissionJSON.get("require_dependencies")));
+        RequestType[] methods = permissionJSON.containsKey("allowed_methods")
+            ? ((List<String>) permissionJSON.get("allowed_methods")).stream().map(RequestType::valueOf).toArray(RequestType[]::new) : null;
+        return new PermissionEffect(permission, allowedPaths.toArray(new String[allowedPaths.size()]), restrictions, depends.stream().map(Permission::getByName).toArray((a) -> new Permission[a]), defaultLevel, Boolean.TRUE.equals(permissionJSON.get("require_dependencies")), methods, Boolean.TRUE.equals(permissionJSON.get("exact_default")));
     }
     private void registerGenerics(List<Map<String, ?>> genericList) {
         genericList.stream()
