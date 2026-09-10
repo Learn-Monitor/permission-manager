@@ -127,6 +127,66 @@
     ],
     "flat": [
         {
+            "name": "curriculum_view",
+            "description": "Allows viewing curriculum, context, budgets and current permissions.",
+            "paths": [
+                "/curriculum.js",
+                "/curriculum-catalog",
+                "/curriculum-structure",
+                "/curriculum-budget",
+                "/flexible-tasks",
+                "/curriculum-progress",
+                "/get-permissions"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_manage_flexible",
+            "description": "Allows creating and editing flexible tasks; backend ownership and budgets still apply.",
+            "paths": [
+                "/add-flexible-task",
+                "/edit-flexible-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_complete_flexible",
+            "description": "Allows completing flexible tasks; backend ownership and student context still apply.",
+            "paths": [
+                "/complete-flexible-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_manage_central",
+            "description": "Allows administrators to manage central topics, tasks and token values.",
+            "paths": [
+                "/add-curriculum-topic",
+                "/rename-topic",
+                "/add-curriculum-task",
+                "/edit-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "admin",
+            "require_dependencies": true
+        },
+        {
             "name": "login",
             "description": "Allows viewing the login page. Do not remove this from the ANONYMOUS user, or no one may be able to sign in.",
             "paths": [

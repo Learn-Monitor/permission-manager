@@ -36,6 +36,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.13.4") // using JUnit 5 (latest)
     testImplementation("io.github.learn-monitor:student-database:v2.0.1")
     testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("io.github.learn-monitor:plugin-loader:v1.0.6")
+    testImplementation("org.slf4j:slf4j-api:2.0.13")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

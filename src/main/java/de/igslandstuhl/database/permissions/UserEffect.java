@@ -20,10 +20,27 @@ public class UserEffect {
 
     public UserEffect(User user, Permission[] permissions) {
         this.user = user;
-        effects = Arrays.stream(permissions)
-        .map(PermissionManager.getInstance().permissionEffectRegistry()::get)
-        .filter(Objects::nonNull)
-        .toArray((a) -> new PermissionEffect[a]);
+        // Resolve only opt-in prerequisites. Legacy "depends" metadata keeps its behavior.
+        Set<PermissionEffect> pending = new LinkedHashSet<>();
+        Arrays.stream(permissions)
+            .map(PermissionManager.getInstance().permissionEffectRegistry()::get)
+            .filter(Objects::nonNull)
+            .forEach(pending::add);
+        Set<Permission> resolved = new LinkedHashSet<>();
+        boolean changed;
+        do {
+            changed = false;
+            for (PermissionEffect effect : pending) {
+                if (!resolved.contains(effect.permission()) &&
+                    (!effect.requireDependencies() ||
+                     Arrays.stream(effect.depends()).allMatch(resolved::contains))) {
+                    changed |= resolved.add(effect.permission());
+                }
+            }
+        } while (changed);
+        // Missing prerequisites and cycles fail closed, without creating or activating nodes.
+        effects = pending.stream().filter(e -> resolved.contains(e.permission()))
+            .toArray(PermissionEffect[]::new);
     }
 
     public AccessState testAccess(String path, HttpRequest request) {
