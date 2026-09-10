@@ -1,5 +1,8 @@
 # Flexible curriculum permissions
 
+For the subsequent student-context functions, see
+[student context permissions](student-curriculum-context-permissions.md).
+
 The Permission Manager supplies the outer function/route authorization for the
 flexible curriculum backend. The implementation uses four independently editable
 flat permissions; no class/subject permission expansion is added.

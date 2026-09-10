@@ -103,6 +103,7 @@ public class PermissionNode {
                 default:
                     break;
             }
+            active = active && PermissionManager.getInstance().permissionEffectRegistry().get(permission).isDefaultEligible(user);
             node = new PermissionNode(permission, username, active);
             node.insertIntoDatabase();
         }

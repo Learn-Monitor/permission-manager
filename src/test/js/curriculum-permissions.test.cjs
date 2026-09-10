@@ -42,3 +42,25 @@ test('an unavailable self-permission endpoint fails closed in the UI helper', as
     assert.equal(await context.hasPermission('curriculum_view'), false);
     assert.equal(await context.hasPermission('curriculum_manage_flexible'), false);
 });
+
+test('context capability matches the standard UI without implying central editing or view', async () => {
+    const context = client(async () => [{name: 'curriculum_assign_context'}]);
+    assert.equal(await context.hasPermission('curriculum_assign_context'), true);
+    assert.equal(await context.hasPermission('curriculum_manage_central'), false);
+    assert.equal(await context.hasPermission('curriculum_view'), false);
+    assert.equal(await context.hasPermission('curriculum_student_progress'), false);
+});
+
+test('student own progress is independent of teacher view and refresh fails closed', async () => {
+    let failed = false;
+    const context = client(async () => {
+        if (failed) throw Error('Unavailable');
+        return [{name: 'curriculum_student_progress'}];
+    });
+    assert.equal(await context.hasPermission('curriculum_student_progress'), true);
+    assert.equal(await context.hasPermission('curriculum_view'), false);
+    assert.equal(await context.hasPermission('curriculum_assign_context'), false);
+    failed = true;
+    await context.loadCurrentPermissions();
+    assert.equal(await context.hasPermission('curriculum_student_progress'), false);
+});

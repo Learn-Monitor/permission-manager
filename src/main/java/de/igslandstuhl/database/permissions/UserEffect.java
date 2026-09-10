@@ -46,7 +46,7 @@ public class UserEffect {
     public AccessState testAccess(String path, HttpRequest request) {
         boolean access = Arrays.stream(effects)
         .filter((e) -> Arrays.stream(e.allowedPaths()).anyMatch(path::equals))
-        .anyMatch((e) -> e.testPostRestrictions(request));
+        .anyMatch((e) -> e.testRequest(request));
 
         if (user == null || user == User.ANONYMOUS) {
             return access ? AccessState.PERMITTED : AccessState.UNAUTHORIZED;
