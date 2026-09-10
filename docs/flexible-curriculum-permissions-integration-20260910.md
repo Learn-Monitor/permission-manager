@@ -161,3 +161,53 @@ für den Standard-UI-Permission-Vertrag samt DOM-Tests für entzogene view/manag
 complete/central-Rechte und verständliche Fehler. Results und Overlay danach in
 jeweils eigenen Sprints auf den scoped Progress-Vertrag vorbereiten. Das vollständige
 Komponentenpaket erst nach separater Freigabe integrieren und deployen.
+
+## Sprint 4: student context permissions
+
+Control main remains `3c7895d223e14636e0a94425ca09f13189060ff3` (remote verified).
+The two already-tested backend branches were pushed as a separately authorized
+prerequisite, without source changes or new commits. Both published backend HEADs
+were checked with `git ls-remote`: upstream `205f8d853c7f4011f722c621f8c306243a3bf23b`,
+canonical `739bbccadebabf2acc69911a273cfcda4f9bb665`. Subsequent backend access was
+read-only. No other repository content, runtime, service or live database changed.
+
+| PM track | Exact Sprint-2 base | Sprint-4 feature commit |
+|---|---|---|
+| Upstream | `12fc737db4f39801e34c787e06898a3e851fe119` | `a22e7f5985d2b45a0b9d1ef5952a93241937a814` |
+| Canonical v2 | `bde94e87e7d3bd4bf1ca42125322c4a276a65f77` | `4af7cdeece86d83621a6dcfb50e3e4d9dbfbce0a` |
+
+Successor branches:
+- `feature/student-curriculum-context-permissions-upstream-20260910`
+- `feature/student-curriculum-context-permissions-canonical-v2-20260910`
+
+Exactly five new POST routes, zero new GET routes and zero new teacher-reader
+routes were discovered on both backend tracks. Full route mappings, defaults,
+backend/PM boundaries and the existing UI capability naming contract are recorded
+in [student context permissions](student-curriculum-context-permissions.md).
+
+Two cherry-pick conflicts were resolved conservatively:
+- `PermissionNode` retains canonical's exact-role `isDefaultActive` implementation;
+  only the identical opt-in `isDefaultEligible` intersection is added.
+- `permissions.json` retains every canonical plugin group and appends the same two
+  new groups. Upstream's wider legacy STUDENT defaults are not imported.
+
+`git range-diff` shows only those base-specific contexts/newline differences.
+The audit script confirms unchanged old flat/generic policies and default roles
+against each exact PM base. Method and exact-default policies are opt-in, and
+existing public constructors, role grants and Sprint-2 dependencies are preserved.
+
+Validation:
+- Upstream `./gradlew test build --offline`: **20 tests passed**.
+- Canonical `./gradlew test build --offline`: **27 tests passed**, including its
+  additional role-default and Arcanum/Attendance/Results regressions.
+- Both: **5 JavaScript contract tests passed**, Node 22.14.0.
+- Both: route audit against both pinned backend tracks and `git diff --check` passed.
+- Reinitialization and simulated cold start retain student/admin false nodes,
+  explicit true grants and stable permission/node counts. SQL uses synthetic
+  in-memory fixtures; no actual service restart or live DB is involved.
+- JAR and sources JAR built locally. Only the existing Mockito/JVM class-sharing
+  warning appeared; no publishing, deployment or PR creation was performed.
+
+Results should next adopt student-session own-progress and assigned staff progress,
+respect missing/conflicting contexts, and invalidate totals after edits/transfers.
+Do not aggregate teacher budgets or introduce awarded-token snapshots.
