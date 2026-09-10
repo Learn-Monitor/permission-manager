@@ -32,7 +32,7 @@ public class PermissionsConfigLoader {
         .toArray((a) -> new PostRestriction[a]);
 
         AccessLevel defaultLevel = AccessLevel.valueOf(((String) permissionJSON.get("default")).toUpperCase());
-        return new PermissionEffect(permission, allowedPaths.toArray(new String[allowedPaths.size()]), restrictions, depends.stream().map(Permission::getByName).toArray((a) -> new Permission[a]), defaultLevel);
+        return new PermissionEffect(permission, allowedPaths.toArray(new String[allowedPaths.size()]), restrictions, depends.stream().map(Permission::getByName).toArray((a) -> new Permission[a]), defaultLevel, Boolean.TRUE.equals(permissionJSON.get("require_dependencies")));
     }
     private void registerGenerics(List<Map<String, ?>> genericList) {
         genericList.stream()

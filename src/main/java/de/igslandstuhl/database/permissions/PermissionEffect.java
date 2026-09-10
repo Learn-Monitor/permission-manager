@@ -7,7 +7,13 @@ import de.igslandstuhl.database.server.webserver.access.AccessLevel;
 import de.igslandstuhl.database.server.webserver.requests.HttpRequest;
 import de.igslandstuhl.database.server.webserver.requests.PostRequest;
 
-public record PermissionEffect(Permission permission, String[] allowedPaths, PostRestriction[] postRestrictions, Permission[] depends, AccessLevel defaultLevel) {
+public record PermissionEffect(Permission permission, String[] allowedPaths, PostRestriction[] postRestrictions, Permission[] depends, AccessLevel defaultLevel, boolean requireDependencies) {
+    // Preserve legacy callers: dependency enforcement is explicitly opt-in.
+    public PermissionEffect(Permission permission, String[] allowedPaths, PostRestriction[] postRestrictions,
+                            Permission[] depends, AccessLevel defaultLevel) {
+        this(permission, allowedPaths, postRestrictions, depends, defaultLevel, false);
+    }
+
     public void register() {
         PermissionManager.getInstance().permissionEffectRegistry().register(permission, this);
     }
