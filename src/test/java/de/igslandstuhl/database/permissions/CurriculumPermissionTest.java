@@ -31,8 +31,8 @@ import de.igslandstuhl.database.server.webserver.requests.*;
 class CurriculumPermissionTest {
     private static final Map<String, List<String>> ROUTES = Map.of(
         "curriculum_view", List.of("/curriculum.js", "/curriculum-catalog", "/curriculum-structure",
-            "/curriculum-budget", "/flexible-tasks", "/curriculum-progress"),
-        "curriculum_manage_flexible", List.of("/add-flexible-task", "/edit-flexible-task"),
+            "/curriculum-budget", "/flexible-tasks", "/curriculum-progress", "/flexible-curriculum-structure"),
+        "curriculum_manage_flexible", List.of("/add-flexible-task", "/edit-flexible-task", "/add-flexible-topic", "/rename-flexible-topic"),
         "curriculum_complete_flexible", List.of("/complete-flexible-task"),
         "curriculum_manage_central", List.of("/add-curriculum-topic", "/rename-topic",
             "/add-curriculum-task", "/edit-task"));
@@ -118,6 +118,35 @@ class CurriculumPermissionTest {
         if (servers != null) servers.close();
         if (database != null) database.close();
         clearNodeCaches();
+    }
+
+    @Test
+    void enrollmentIsAdminOnlyAndPublicationIsStaffOnlyWithViewDependency() {
+        for(User user:List.of(admin,teacher,student,User.ANONYMOUS)) {
+            for(String path:List.of("/curriculum-enrollment-catalog","/set-curriculum-subject-type","/assign-grade-curriculum","/curriculum-wpf-roster","/assign-curriculum-wpf"))assertContextAccess(user,path,RequestType.POST,user==admin);
+            for(String path:List.of("/curriculum-releases","/set-curriculum-release"))assertContextAccess(user,path,RequestType.POST,user==admin||user==teacher);
+        }
+        node(admin,"curriculum_view").setActive(false);node(teacher,"curriculum_view").setActive(false);UserEffect.registerAll();
+        assertContextAccess(admin,"/assign-grade-curriculum",RequestType.POST,false);assertContextAccess(teacher,"/set-curriculum-release",RequestType.POST,false);
+    }
+
+    @Test
+    void retiredPersistedPermissionDoesNotBreakNewUserRegistration() throws Exception {
+        Permission retired = new Permission("demo_retired_permission", "Synthetic retired definition");
+        retired.register();
+        assertNull(manager.permissionEffectRegistry().get(retired));
+
+        assertDoesNotThrow(UserEffect::registerAll);
+        assertNotNull(UserEffect.get(teacher));
+        assertTrue(Arrays.stream(UserEffect.get(teacher).getPermissions())
+            .anyMatch(p -> p.getName().equals("curriculum_view")));
+        assertFalse(Arrays.asList(UserEffect.get(teacher).getPermissions()).contains(retired));
+        try (var rows = database.createStatement().executeQuery(
+                "SELECT COUNT(*) FROM permnodes WHERE permission='demo_retired_permission'")) {
+            assertTrue(rows.next());
+            assertEquals(0, rows.getInt(1));
+        }
+        assertSame(retired, Permission.getByName("demo_retired_permission"));
     }
 
     @Test
@@ -239,7 +268,7 @@ class CurriculumPermissionTest {
     @Test
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
-            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()))
+            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment").contains(p.getName()))
             .map(manager.permissionEffectRegistry()::get).toList();
         for (User user : List.of(teacher, admin, student, User.ANONYMOUS)) {
             var active = legacy.stream().filter(e -> user == User.ANONYMOUS
@@ -267,6 +296,19 @@ class CurriculumPermissionTest {
                 paths.forEach(path->assertContextAccess(user,path,RequestType.POST,allowed));
             });
         }
+        assertFalse(effectiveNames(student).contains("curriculum_view"));
+    }
+
+    @Test
+    void studentCatalogUsesOwnPermissionAndPostOnlyWithRevocation() {
+        String path="/my-curriculum-catalog";
+        for(User user:List.of(student,teacher,admin,User.ANONYMOUS)) {
+            assertContextAccess(user,path,RequestType.POST,user==student);
+            assertContextAccess(user,path,RequestType.GET,false);
+        }
+        node(student,"curriculum_student_progress").setActive(false);
+        UserEffect.registerAll();
+        assertContextAccess(student,path,RequestType.POST,false);
         assertFalse(effectiveNames(student).contains("curriculum_view"));
     }
 

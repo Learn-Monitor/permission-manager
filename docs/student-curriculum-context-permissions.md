@@ -126,3 +126,34 @@ conflicting assignments explicitly, invalidate cached progress after definition
 edits/transfers, and retain current definition values rather than award snapshots.
 Plan combined browser/backend/PM validation separately; this sprint does not
 claim a deployed browser acceptance test or change Results/Overlay permissions.
+
+## Dashboard topic/catalog follow-up (11 September 2026)
+
+The curriculum dashboard backend adds four routes. `/flexible-curriculum-structure`
+uses `curriculum_view`; `/add-flexible-topic` and `/rename-flexible-topic` use
+`curriculum_manage_flexible` and its existing view dependency. The student-only
+POST `/my-curriculum-catalog` uses `curriculum_student_progress`, retaining exact
+student defaults and POST-only access. Core session/context checks remain required
+regardless of custom PM grants. No new permissions or default node migration.
+
+Validation: 28 Java tests pass against the locally built dashboard-catalog backend
+JAR. The role matrix includes new staff routes, and a dedicated catalog test covers
+student-only defaults, GET denial and revocation after rebuilding UserEffects
+(the existing PM update workflow). No deployment or runtime changes.
+
+### Demo-Abnahme: veraltete Berechtigungsdefinitionen (12.09.2026)
+
+Bestehende Datenbanken können Berechtigungen enthalten, deren Definition nicht
+mehr in der aktuellen Konfiguration vorkommt. Bei neuen Benutzern führte das
+Erzeugen eines Standard-PermissionNode für solche Einträge zu einer
+NullPointerException beim Start. `UserEffect.registerAll()` berücksichtigt nun
+nur Berechtigungen mit einem aktuellen PermissionEffect, analog zur bereits
+vorhandenen Filterung im UserEffect-Konstruktor. Historische Daten bleiben
+bestehen; veraltete Definitionen erteilen keinen Zugriff.
+
+Der Regressionstest `retiredPersistedPermissionDoesNotBreakNewUserRegistration`
+prüft die Registrierung neuer Benutzer, weiterhin wirksame Curriculum-Rechte,
+fehlende aktive Altrechte und den Erhalt der historischen Definition. 29 Tests
+bestehen. Zusätzlich wurde der Start mit einer synthetischen veralteten
+Definition im vollständigen Plugin-Verbund und mit allen drei Dashboard-Rollen
+geprüft.

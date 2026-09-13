@@ -78,6 +78,9 @@ public class UserEffect {
                 // Get permissions directly assigned to the user
                 Set<Permission> permissions = new LinkedHashSet<>(
                     Permission.getAll().stream()
+                        // Retired definitions can remain in existing databases. They have
+                        // no current effect and must not create default nodes for new users.
+                        .filter(p -> PermissionManager.getInstance().permissionEffectRegistry().get(p) != null)
                         .filter((p) -> PermissionNode.getPermissionNode(u.getUsername(), p).isActive())
                         .toList()
                 );

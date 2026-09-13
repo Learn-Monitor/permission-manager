@@ -136,7 +136,8 @@
                 "/curriculum-budget",
                 "/flexible-tasks",
                 "/curriculum-progress",
-                "/get-permissions"
+                "/get-permissions",
+                "/flexible-curriculum-structure"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -148,7 +149,9 @@
             "description": "Allows creating and editing flexible tasks; backend ownership and budgets still apply.",
             "paths": [
                 "/add-flexible-task",
-                "/edit-flexible-task"
+                "/edit-flexible-task",
+                "/add-flexible-topic",
+                "/rename-flexible-topic"
             ],
             "post_restrictions": [],
             "depends": [
@@ -280,7 +283,9 @@
             "description": "Allows adding and removing students, and viewing the manage_students page.",
             "paths": [
                 "/manage_students",
-                "/add-students"
+                "/add-students",
+                "/edit-student-profile"
+                ,"/delete-student"
             ],
             "post_restrictions": [],
             "depends": [
@@ -320,6 +325,7 @@
                 "/teacher-subjects",
                 "/add-subject-to-teacher",
                 "/add-class-to-teacher"
+                ,"/edit-teacher-profile"
             ],
             "post_restrictions": [],
             "depends": [
@@ -777,7 +783,8 @@
             "name": "curriculum_student_progress",
             "description": "Allows students to read their own assigned curriculum progress.",
             "paths": [
-                "/my-curriculum-progress"
+                "/my-curriculum-progress",
+                "/my-curriculum-catalog"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -802,6 +809,45 @@
             "allowed_methods": [
                 "POST"
             ]
+        },
+        {
+            "name": "curriculum_manage_enrollment",
+            "description": "Assign grade subjects and one individual WPF per semester.",
+            "paths": [
+                "/curriculum-enrollment-catalog",
+                "/set-curriculum-subject-type",
+                "/assign-grade-curriculum",
+                "/curriculum-wpf-roster",
+                "/assign-curriculum-wpf",
+                "/create-curriculum-semester"
+                ,"/remove-grade-curriculum-subject"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "admin",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_publish",
+            "description": "Release central topics or individual tasks in the teacher context.",
+            "paths": [
+                "/curriculum-releases",
+                "/set-curriculum-release"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true
         }
     ]
 }
