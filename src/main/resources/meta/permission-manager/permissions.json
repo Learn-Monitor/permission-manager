@@ -812,15 +812,16 @@
         },
         {
             "name": "curriculum_manage_enrollment",
-            "description": "Assign grade subjects and one individual WPF per semester.",
+            "description": "Assign grade subjects, individual subject groups, teachers, and active curriculum semesters.",
             "paths": [
                 "/curriculum-enrollment-catalog",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
                 "/curriculum-wpf-roster",
                 "/assign-curriculum-wpf",
-                "/create-curriculum-semester"
-                ,"/remove-grade-curriculum-subject"
+                "/create-curriculum-semester",
+                "/activate-curriculum-semester",
+                "/remove-grade-curriculum-subject"
             ],
             "post_restrictions": [],
             "depends": [

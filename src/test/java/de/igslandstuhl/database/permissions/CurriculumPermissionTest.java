@@ -123,7 +123,7 @@ class CurriculumPermissionTest {
     @Test
     void enrollmentIsAdminOnlyAndPublicationIsStaffOnlyWithViewDependency() {
         for(User user:List.of(admin,teacher,student,User.ANONYMOUS)) {
-            for(String path:List.of("/curriculum-enrollment-catalog","/set-curriculum-subject-type","/assign-grade-curriculum","/curriculum-wpf-roster","/assign-curriculum-wpf"))assertContextAccess(user,path,RequestType.POST,user==admin);
+            for(String path:List.of("/curriculum-enrollment-catalog","/set-curriculum-subject-type","/assign-grade-curriculum","/curriculum-wpf-roster","/assign-curriculum-wpf","/create-curriculum-semester","/activate-curriculum-semester","/remove-grade-curriculum-subject"))assertContextAccess(user,path,RequestType.POST,user==admin);
             for(String path:List.of("/curriculum-releases","/set-curriculum-release"))assertContextAccess(user,path,RequestType.POST,user==admin||user==teacher);
         }
         node(admin,"curriculum_view").setActive(false);node(teacher,"curriculum_view").setActive(false);UserEffect.registerAll();
