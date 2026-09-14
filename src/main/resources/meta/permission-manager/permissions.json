@@ -180,7 +180,10 @@
                 "/add-curriculum-topic",
                 "/rename-topic",
                 "/add-curriculum-task",
-                "/edit-task"
+                "/edit-task",
+                "/central-curriculum-overview",
+                "/preview-central-curriculum-import",
+                "/import-central-curriculum"
             ],
             "post_restrictions": [],
             "depends": [
