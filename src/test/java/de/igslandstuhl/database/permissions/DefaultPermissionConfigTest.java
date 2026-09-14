@@ -20,6 +20,10 @@ class DefaultPermissionConfigTest {
 
         assertTrue(defaultsForPath(permissions, "/begin-task").contains("user"));
         assertTrue(defaultsForPath(permissions, "/cancel-task").contains("user"));
+        assertTrue(defaultsForPath(permissions, "/complete-task").contains("teacher"));
+        assertFalse(defaultsForPath(permissions, "/complete-task").stream()
+            .anyMatch(level -> level.equals("student") || level.equals("user")));
+        assertEquals(List.of("teacher"), defaultsForPath(permissions, "/complete-flexible-task"));
         assertFalse(defaultsForPath(permissions, "/cancel-task").stream()
             .anyMatch(level -> level.equals("student")));
     }
