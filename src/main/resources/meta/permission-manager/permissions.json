@@ -127,6 +127,72 @@
     ],
     "flat": [
         {
+            "name": "curriculum_view",
+            "description": "Allows viewing curriculum, context, budgets and current permissions.",
+            "paths": [
+                "/curriculum.js",
+                "/curriculum-catalog",
+                "/curriculum-structure",
+                "/curriculum-budget",
+                "/flexible-tasks",
+                "/curriculum-progress",
+                "/get-permissions",
+                "/flexible-curriculum-structure"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_manage_flexible",
+            "description": "Allows creating and editing flexible tasks; backend ownership and budgets still apply.",
+            "paths": [
+                "/add-flexible-task",
+                "/edit-flexible-task",
+                "/add-flexible-topic",
+                "/rename-flexible-topic"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_complete_flexible",
+            "description": "Allows completing flexible tasks; backend ownership and student context still apply.",
+            "paths": [
+                "/complete-flexible-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_manage_central",
+            "description": "Allows administrators to manage central topics, tasks and token values.",
+            "paths": [
+                "/add-curriculum-topic",
+                "/rename-topic",
+                "/add-curriculum-task",
+                "/edit-task",
+                "/central-curriculum-overview",
+                "/preview-central-curriculum-import",
+                "/import-central-curriculum"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "admin",
+            "require_dependencies": true
+        },
+        {
             "name": "login",
             "description": "Allows viewing the login page. Do not remove this from the ANONYMOUS user, or no one may be able to sign in.",
             "paths": [
@@ -220,7 +286,9 @@
             "description": "Allows adding and removing students, and viewing the manage_students page.",
             "paths": [
                 "/manage_students",
-                "/add-students"
+                "/add-students",
+                "/edit-student-profile"
+                ,"/delete-student"
             ],
             "post_restrictions": [],
             "depends": [
@@ -260,6 +328,7 @@
                 "/teacher-subjects",
                 "/add-subject-to-teacher",
                 "/add-class-to-teacher"
+                ,"/edit-teacher-profile"
             ],
             "post_restrictions": [],
             "depends": [
@@ -326,9 +395,20 @@
         },
         {
             "name": "student",
-            "description": "Allows choosing tasks, and cancelling them.",
+            "description": "Allows choosing tasks.",
             "paths": [
-                "/begin-task",
+                "/begin-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
+        },
+        {
+            "name": "cancel_task",
+            "description": "Allows cancelling a selected task.",
+            "paths": [
                 "/cancel-task"
             ],
             "post_restrictions": [],
@@ -336,6 +416,442 @@
                 "standard_files"
             ],
             "default": "user"
+        },
+        {
+            "name": "core_public_compat",
+            "description": "Preserves the demo's public core routes not fully covered upstream.",
+            "paths": [
+                "/subjects",
+                "/grade-list"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "core_user_compat",
+            "description": "Preserves the demo's authenticated core routes not fully covered upstream.",
+            "paths": [
+                "/logout",
+                "/subject-request",
+                "/current-topic",
+                "/tasks",
+                "/build_partner_search.js",
+                "/get-permissions"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "user"
+        },
+        {
+            "name": "core_student_compat",
+            "description": "Preserves core routes restricted to students in the current demo.",
+            "paths": [
+                "/topic-list",
+                "/search-partner"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "student"
+        },
+        {
+            "name": "core_teacher_compat",
+            "description": "Preserves core teacher routes and their required operations.",
+            "paths": [
+                "/student",
+                "/build_student.js",
+                "/student-data",
+                "/student-subjects",
+                "/change-current-topic",
+                "/complete-task",
+                "/reopen-task",
+                "/lock-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "teacher"
+        },
+        {
+            "name": "core_admin_compat",
+            "description": "Preserves all current demo core administration routes.",
+            "paths": [
+                "/teachers",
+                "/students",
+                "/classes",
+                "/all-student-results",
+                "/manage_students",
+                "/manage_teachers",
+                "/manage_classes",
+                "/manage_subjects",
+                "/editor",
+                "/teacher",
+                "/subject",
+                "/class",
+                "/teacher-classes",
+                "/teacher-subjects",
+                "/teacher-students",
+                "/teacher-results",
+                "/teacher-dashboard",
+                "/build_teacher.js",
+                "/build_subject.js",
+                "/build_class.js",
+                "/build_teacher_dashboard.js",
+                "/plugin-list",
+                "/add-students",
+                "/add-teachers",
+                "/add-teacher",
+                "/add-subject",
+                "/add-class",
+                "/lpt-file",
+                "/student-list",
+                "/class-subjects",
+                "/delete-subject",
+                "/edit-subject",
+                "/delete-class",
+                "/edit-class",
+                "/add-subject-to-class",
+                "/add-grade-to-subject",
+                "/delete-grade-from-subject",
+                "/delete-topics",
+                "/add-class-to-teacher",
+                "/add-subject-to-teacher",
+                "/change-graduation-level",
+                "/get-plugin",
+                "/toggle-plugin",
+                "/toggle-plugin-setting",
+                "/set-plugin-setting",
+                "/student-results-csv",
+                "/completed-tasks",
+                "/class-results",
+                "/grade-results"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "standard_files"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "arcanum_public_assets",
+            "description": "Allows the public Arcanum login, logout, inspiration and dashboard image assets used by the demo.",
+            "paths": [
+                "/arcanum-login-background.png",
+                "/arcanum-logo.png",
+                "/arcanum-stamp.png",
+                "/arcanum-coin.png",
+                "/arcanum-inspiration-01-mut.png",
+                "/arcanum-inspiration-02-neugier.png",
+                "/arcanum-inspiration-03-lernen.png",
+                "/arcanum-inspiration-04-zusammenhalt.png",
+                "/arcanum-inspiration-05-dranbleiben.png",
+                "/arcanum-inspiration-06-selbstvertrauen.png",
+                "/arcanum-inspiration-07-fragen.png",
+                "/arcanum-inspiration-08-ideen.png",
+                "/arcanum-inspiration-09-abenteuer.png",
+                "/arcanum-inspiration-10-entdeckerweisheit.png",
+                "/arcanum-inspiration-11-geduld.png",
+                "/arcanum-inspiration-12-hilfsbereitschaft.png",
+                "/arcanum-inspiration-13-verantwortung.png",
+                "/arcanum-inspiration-14-konzentration.png",
+                "/arcanum-inspiration-15-hoffnung.png",
+                "/arcanum-inspiration-16-zielstrebigkeit.png",
+                "/arcanum-inspiration-17-freundschaft.png",
+                "/arcanum-inspiration-18-achtsamkeit.png",
+                "/arcanum-inspiration-19-ausprobieren.png",
+                "/arcanum-inspiration-20-gemeinschaft.png",
+                "/arcanum-inspiration-21-lernen-weiter.png",
+                "/arcanum-inspiration-22-team.png",
+                "/arcanum-inspiration-23-durchhalten.png",
+                "/arcanum-inspiration-24-an-dich-glauben.png",
+                "/arcanum-inspiration-25-aus-fehlern-lernen.png",
+                "/arcanum-inspiration-26-neugier-ideen.png",
+                "/arcanum-inspiration-27-ideen-teilen.png",
+                "/arcanum-inspiration-28-nicht-aufgeben.png",
+                "/arcanum-inspiration-29-ziele.png",
+                "/arcanum-inspiration-30-achtsamkeit-offene-sinne.png",
+                "/arcanum-dashboard-background.png",
+                "/arcanum-neutral-avatar.png",
+                "/arcanum-avatar-01.png",
+                "/arcanum-avatar-02.png",
+                "/arcanum-avatar-03.png",
+                "/arcanum-avatar-04.png",
+                "/arcanum-avatar-05.png",
+                "/arcanum-avatar-06.png",
+                "/arcanum-avatar-07.png",
+                "/arcanum-avatar-08.png",
+                "/arcanum-avatar-09.png",
+                "/arcanum-avatar-10.png",
+                "/arcanum-avatar-11.png",
+                "/arcanum-avatar-12.png",
+                "/arcanum-avatar-13.png",
+                "/arcanum-avatar-14.png",
+                "/arcanum-avatar-15.png",
+                "/arcanum-avatar-16.png",
+                "/arcanum-avatar-17.png",
+                "/arcanum-avatar-18.png",
+                "/arcanum-avatar-19.png",
+                "/arcanum-avatar-20.png",
+                "/arcanum-avatar-21.png",
+                "/arcanum-avatar-22.png",
+                "/arcanum-avatar-23.png",
+                "/arcanum-avatar-24.png",
+                "/arcanum-avatar-25.png",
+                "/arcanum-avatar-26.png",
+                "/arcanum-avatar-27.png",
+                "/arcanum-avatar-28.png",
+                "/arcanum-avatar-29.png",
+                "/arcanum-avatar-30.png",
+                "/arcanum-avatar-31.png",
+                "/arcanum-avatar-32.png",
+                "/arcanum-avatar-33.png",
+                "/arcanum-avatar-34.png",
+                "/arcanum-avatar-35.png",
+                "/arcanum-avatar-36.png",
+                "/arcanum-avatar-37.png",
+                "/arcanum-avatar-38.png",
+                "/arcanum-avatar-39.png",
+                "/arcanum-avatar-40.png",
+                "/arcanum-avatar-41.png",
+                "/arcanum-avatar-42.png",
+                "/arcanum-avatar-43.png",
+                "/arcanum-avatar-44.png",
+                "/arcanum-avatar-45.png",
+                "/arcanum-avatar-46.png",
+                "/arcanum-avatar-47.png",
+                "/arcanum-avatar-48.png",
+                "/arcanum-avatar-49.png",
+                "/arcanum-avatar-50.png",
+                "/arcanum-avatar-51.png",
+                "/arcanum-avatar-52.png",
+                "/arcanum-avatar-53.png",
+                "/arcanum-avatar-54.png",
+                "/arcanum-avatar-55.png",
+                "/arcanum-avatar-56.png",
+                "/arcanum-avatar-57.png",
+                "/arcanum-avatar-58.png",
+                "/arcanum-avatar-59.png",
+                "/arcanum-avatar-60.png",
+                "/arcanum-logout.html",
+                "/arcanum-logout.css",
+                "/arcanum-logout.js",
+                "/arcanum-logout-background.png",
+                "/arcanum-schatzkammer-tuer.png"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "arcanum_student",
+            "description": "Allows the Arcanum student dashboard styles while retaining student-only access.",
+            "paths": [
+                "/arcanum-student.css",
+                "/arcanum-student-theme.css"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "dashboard"
+            ],
+            "default": "student"
+        },
+        {
+            "name": "attendance_browser_entry",
+            "description": "Allows the public browser check-in page and API; handler logic controls login resume and student-only writes.",
+            "paths": [
+                "/attendance-checkin",
+                "/attendance-checkin.js"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "attendance_teacher",
+            "description": "Allows teachers and administrators to use attendance management.",
+            "paths": [
+                "/attendance",
+                "/attendance.js",
+                "/attendance-data",
+                "/attendance-manual-arrival",
+                "/attendance-preferences-save"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "dashboard"
+            ],
+            "default": "teacher"
+        },
+        {
+            "name": "attendance_admin",
+            "description": "Allows administrators to configure attendance locations.",
+            "paths": [
+                "/attendance-admin",
+                "/attendance-admin.js",
+                "/attendance-admin-data",
+                "/attendance-location-save"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "attendance_teacher"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "attendance_display",
+            "description": "Preserves the intentionally public attendance display, location views, token API and script.",
+            "paths": [
+                "/attendance-display",
+                "/attendance-display.js",
+                "/attendance-display/arrival",
+                "/attendance-display/la",
+                "/attendance-display/ws",
+                "/attendance-display/nawi",
+                "/attendance-display/input1",
+                "/attendance-display/gn",
+                "/attendance-display-token",
+                "/attendance-signage-token"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "results_student",
+            "description": "Allows students to view their own results and load the results script.",
+            "paths": [
+                "/results",
+                "/build_results.js"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "dashboard"
+            ],
+            "default": "student"
+        },
+        {
+            "name": "results_teacher",
+            "description": "Allows teachers and administrators to view student results and load the results script.",
+            "paths": [
+                "/student-results",
+                "/build_results.js"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "dashboard"
+            ],
+            "default": "teacher"
+        },
+        {
+            "name": "results_admin",
+            "description": "Allows administrators to export student results.",
+            "paths": [
+                "/student-results-csv"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "results_teacher"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "results_public_assets",
+            "description": "Allows public styles and imagery required to render results pages.",
+            "paths": [
+                "/results.css",
+                "/arcanum-schatzkammer-hintergrund.png"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "public"
+        },
+        {
+            "name": "permission_manager_admin_compat",
+            "description": "Adds the get-role API omitted from the upstream manage_permissions path list.",
+            "paths": [
+                "/get-role"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "manage_permissions"
+            ],
+            "default": "admin"
+        },
+        {
+            "name": "curriculum_student_progress",
+            "description": "Allows students to read their own assigned curriculum progress.",
+            "paths": [
+                "/my-curriculum-progress",
+                "/my-curriculum-catalog"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "student",
+            "allowed_methods": [
+                "POST"
+            ],
+            "exact_default": true
+        },
+        {
+            "name": "curriculum_assign_context",
+            "description": "Allows administrators to inspect and assign student curriculum contexts and explicitly transfer completed work.",
+            "paths": [
+                "/curriculum-students",
+                "/assign-curriculum-context",
+                "/curriculum-transfer-preview",
+                "/transfer-curriculum-context"
+            ],
+            "post_restrictions": [],
+            "depends": [],
+            "default": "admin",
+            "allowed_methods": [
+                "POST"
+            ]
+        },
+        {
+            "name": "curriculum_manage_enrollment",
+            "description": "Assign grade subjects, individual subject groups, teachers, and active curriculum semesters.",
+            "paths": [
+                "/curriculum-enrollment-catalog",
+                "/set-curriculum-subject-type",
+                "/assign-grade-curriculum",
+                "/curriculum-wpf-roster",
+                "/assign-curriculum-wpf",
+                "/create-curriculum-semester",
+                "/activate-curriculum-semester",
+                "/remove-grade-curriculum-subject"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "admin",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_publish",
+            "description": "Release central topics or individual tasks in the teacher context.",
+            "paths": [
+                "/curriculum-releases",
+                "/set-curriculum-release"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true
         }
     ]
 }

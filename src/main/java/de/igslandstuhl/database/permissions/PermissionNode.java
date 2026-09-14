@@ -88,27 +88,26 @@ public class PermissionNode {
         if (node == null) {
             AccessLevel defaultLevel = PermissionManager.getInstance().permissionEffectRegistry().get(permission).defaultLevel();
             User user = User.getUser(username);
-            boolean active = false;
-            switch (defaultLevel) {
-                case ADMIN:
-                    if (!user.isAdmin()) break;
-                case TEACHER:
-                    if (!(user.isTeacher() || user.isAdmin())) break;
-                case STUDENT:
-                case USER:
-                    if (!(user.isStudent() || user.isTeacher() || user.isAdmin())) break;
-                case PUBLIC:
-                    active = true;
-                    break;
-                default:
-                    break;
-            }
+            boolean active = isDefaultActive(defaultLevel, user);
+            active = active && PermissionManager.getInstance().permissionEffectRegistry().get(permission).isDefaultEligible(user);
             node = new PermissionNode(permission, username, active);
             node.insertIntoDatabase();
         }
         cache.add(node);
         return node;
     }
+
+    static boolean isDefaultActive(AccessLevel defaultLevel, User user) {
+        return switch (defaultLevel) {
+            case ADMIN -> user.isAdmin();
+            case TEACHER -> user.isTeacher() || user.isAdmin();
+            case STUDENT -> user.isStudent();
+            case USER -> user.isStudent() || user.isTeacher() || user.isAdmin();
+            case PUBLIC -> true;
+            default -> false;
+        };
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("{")

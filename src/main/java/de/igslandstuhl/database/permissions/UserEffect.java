@@ -20,16 +20,33 @@ public class UserEffect {
 
     public UserEffect(User user, Permission[] permissions) {
         this.user = user;
-        effects = Arrays.stream(permissions)
-        .map(PermissionManager.getInstance().permissionEffectRegistry()::get)
-        .filter(Objects::nonNull)
-        .toArray((a) -> new PermissionEffect[a]);
+        // Resolve only opt-in prerequisites. Legacy "depends" metadata keeps its behavior.
+        Set<PermissionEffect> pending = new LinkedHashSet<>();
+        Arrays.stream(permissions)
+            .map(PermissionManager.getInstance().permissionEffectRegistry()::get)
+            .filter(Objects::nonNull)
+            .forEach(pending::add);
+        Set<Permission> resolved = new LinkedHashSet<>();
+        boolean changed;
+        do {
+            changed = false;
+            for (PermissionEffect effect : pending) {
+                if (!resolved.contains(effect.permission()) &&
+                    (!effect.requireDependencies() ||
+                     Arrays.stream(effect.depends()).allMatch(resolved::contains))) {
+                    changed |= resolved.add(effect.permission());
+                }
+            }
+        } while (changed);
+        // Missing prerequisites and cycles fail closed, without creating or activating nodes.
+        effects = pending.stream().filter(e -> resolved.contains(e.permission()))
+            .toArray(PermissionEffect[]::new);
     }
 
     public AccessState testAccess(String path, HttpRequest request) {
         boolean access = Arrays.stream(effects)
         .filter((e) -> Arrays.stream(e.allowedPaths()).anyMatch(path::equals))
-        .anyMatch((e) -> e.testPostRestrictions(request));
+        .anyMatch((e) -> e.testRequest(request));
 
         if (user == null || user == User.ANONYMOUS) {
             return access ? AccessState.PERMITTED : AccessState.UNAUTHORIZED;
@@ -61,6 +78,9 @@ public class UserEffect {
                 // Get permissions directly assigned to the user
                 Set<Permission> permissions = new LinkedHashSet<>(
                     Permission.getAll().stream()
+                        // Retired definitions can remain in existing databases. They have
+                        // no current effect and must not create default nodes for new users.
+                        .filter(p -> PermissionManager.getInstance().permissionEffectRegistry().get(p) != null)
                         .filter((p) -> PermissionNode.getPermissionNode(u.getUsername(), p).isActive())
                         .toList()
                 );
