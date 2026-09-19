@@ -700,7 +700,8 @@
                 "/attendance-admin",
                 "/attendance-admin.js",
                 "/attendance-admin-data",
-                "/attendance-location-save"
+                "/attendance-location-save",
+                "/attendance-location-delete"
             ],
             "post_restrictions": [],
             "depends": [
