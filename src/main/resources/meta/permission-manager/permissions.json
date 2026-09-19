@@ -286,9 +286,14 @@
             "description": "Allows adding and removing students, and viewing the manage_students page.",
             "paths": [
                 "/manage_students",
+                "/manage_students.js",
+                "/students",
+                "/archived-students",
                 "/add-students",
-                "/edit-student-profile"
-                ,"/delete-student"
+                "/edit-student-profile",
+                "/admin-student-profile.js",
+                "/archive-student",
+                "/reactivate-student"
             ],
             "post_restrictions": [],
             "depends": [
@@ -502,6 +507,7 @@
                 "/build_subject.js",
                 "/build_class.js",
                 "/build_teacher_dashboard.js",
+                "/admin-dashboard.js",
                 "/plugin-list",
                 "/add-students",
                 "/add-teachers",

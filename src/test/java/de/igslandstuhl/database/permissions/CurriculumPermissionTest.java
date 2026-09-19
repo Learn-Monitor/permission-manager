@@ -267,6 +267,28 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void adminPolishStudentManagementRoutesAreAdminOnlyAtRuntime() {
+        for (String path : List.of(
+                "/manage_students",
+                "/manage_students.js",
+                "/students",
+                "/archived-students",
+                "/edit-student-profile",
+                "/admin-student-profile.js",
+                "/archive-student",
+                "/reactivate-student",
+                "/admin-dashboard.js")) {
+            assertAccess(admin, path, true);
+            assertAccess(teacher, path, false);
+            assertAccess(student, path, false);
+        }
+
+        for (User user : List.of(admin, teacher, student, User.ANONYMOUS)) {
+            assertAccess(user, "/delete-student", false);
+        }
+    }
+
+    @Test
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
             .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment").contains(p.getName()))
