@@ -31,7 +31,8 @@ import de.igslandstuhl.database.server.webserver.requests.*;
 class CurriculumPermissionTest {
     private static final Map<String, List<String>> ROUTES = Map.of(
         "curriculum_view", List.of("/curriculum.js", "/curriculum-catalog", "/curriculum-structure",
-            "/curriculum-budget", "/flexible-tasks", "/curriculum-progress", "/flexible-curriculum-structure"),
+            "/curriculum-budget", "/flexible-tasks", "/curriculum-progress", "/curriculum-teacher-roster",
+            "/flexible-curriculum-structure"),
         "curriculum_manage_flexible", List.of("/add-flexible-task", "/edit-flexible-task", "/add-flexible-topic", "/rename-flexible-topic"),
         "curriculum_complete_flexible", List.of("/complete-flexible-task"),
         "curriculum_manage_central", List.of("/add-curriculum-topic", "/rename-topic",
