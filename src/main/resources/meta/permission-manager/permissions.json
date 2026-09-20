@@ -138,7 +138,8 @@
                 "/curriculum-progress",
                 "/curriculum-teacher-roster",
                 "/get-permissions",
-                "/flexible-curriculum-structure"
+                "/flexible-curriculum-structure",
+                "/curriculum-student-progress-detail"
             ],
             "post_restrictions": [],
             "depends": [],
