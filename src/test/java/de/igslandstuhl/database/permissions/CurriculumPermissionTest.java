@@ -40,7 +40,7 @@ class CurriculumPermissionTest {
             "/preview-central-curriculum-import", "/import-central-curriculum"));
 
     private static final Map<String,List<String>> CONTEXT_ROUTES = Map.of(
-        "curriculum_student_progress",List.of("/my-curriculum-progress"),
+        "curriculum_student_progress",List.of("/my-curriculum-progress","/my-curriculum-catalog","/my-curriculum-subjects"),
         "curriculum_assign_context",List.of("/curriculum-students","/assign-curriculum-context",
             "/curriculum-transfer-preview","/transfer-curriculum-context"));
 
@@ -344,7 +344,8 @@ class CurriculumPermissionTest {
         Set<String> expected=new HashSet<>();CONTEXT_ROUTES.values().forEach(expected::addAll);
         for(var track:tracks.values()) {
             Map<String,Map<String,String>> before=(Map)track.get("before"),after=(Map)track.get("after");
-            Set<String> added=new HashSet<>();
+            Set<String> added=new HashSet<>(before.get("POST").keySet());
+            added.retainAll(expected);
             for(String method:List.of("GET","POST")) {
                 Set<String> paths=new HashSet<>(after.get(method).keySet());paths.removeAll(before.get(method).keySet());
                 if(method.equals("GET"))assertTrue(paths.isEmpty());

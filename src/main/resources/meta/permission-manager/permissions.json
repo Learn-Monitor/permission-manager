@@ -795,7 +795,8 @@
             "description": "Allows students to read their own assigned curriculum progress.",
             "paths": [
                 "/my-curriculum-progress",
-                "/my-curriculum-catalog"
+                "/my-curriculum-catalog",
+                "/my-curriculum-subjects"
             ],
             "post_restrictions": [],
             "depends": [],
