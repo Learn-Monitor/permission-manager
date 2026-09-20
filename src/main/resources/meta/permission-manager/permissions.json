@@ -175,6 +175,23 @@
             "require_dependencies": true
         },
         {
+            "name": "curriculum_assess_students",
+            "description": "Allows teachers to assess student curriculum stages in their canonical teaching context.",
+            "paths": [
+                "/set-curriculum-stage-assessment"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true,
+            "exact_default": true
+        },
+        {
             "name": "curriculum_manage_central",
             "description": "Allows administrators to manage central topics, tasks and token values.",
             "paths": [
