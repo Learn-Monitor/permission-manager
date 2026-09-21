@@ -57,6 +57,16 @@ class DefaultPermissionConfigTest {
     }
 
     @Test
+    void teacherNavigationScriptRemainsPublic() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> standardFiles = permissionByName(permissions, "standard_files");
+
+        assertEquals("public", standardFiles.get("default"));
+        assertTrue(paths(standardFiles).contains("/teacher-navigation.js"));
+        assertEquals(List.of("public"), defaultsForPath(permissions, "/teacher-navigation.js"));
+    }
+
+    @Test
     void adminPolishStudentManagementRoutesAreAdminOnlyAndDropHardDelete() throws IOException {
         List<Map<String, Object>> permissions = allPermissions(config());
         Map<String, Object> manageStudents = permissionByName(permissions, "manage_students");
