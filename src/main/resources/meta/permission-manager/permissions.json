@@ -848,6 +848,8 @@
                 "/curriculum-enrollment-catalog",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
+                "/curriculum-tutor-assignments",
+                "/assign-class-tutors",
                 "/curriculum-wpf-roster",
                 "/assign-curriculum-wpf",
                 "/create-curriculum-semester",
@@ -859,6 +861,22 @@
                 "curriculum_view"
             ],
             "default": "admin",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_tutor_context",
+            "description": "Allows teachers to view their own semester-scoped tutor classes.",
+            "paths": [
+                "/my-tutor-classes"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
             "allowed_methods": [
                 "POST"
             ],

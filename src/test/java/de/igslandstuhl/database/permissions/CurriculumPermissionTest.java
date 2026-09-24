@@ -292,7 +292,7 @@ class CurriculumPermissionTest {
     @Test
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
-            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment","curriculum_assess_students").contains(p.getName()))
+            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment","curriculum_assess_students","curriculum_tutor_context").contains(p.getName()))
             .map(manager.permissionEffectRegistry()::get).toList();
         for (User user : List.of(teacher, admin, student, User.ANONYMOUS)) {
             var active = legacy.stream().filter(e -> user == User.ANONYMOUS
