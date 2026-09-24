@@ -870,7 +870,8 @@
             "name": "curriculum_tutor_context",
             "description": "Allows teachers to view their own semester-scoped tutor classes.",
             "paths": [
-                "/my-tutor-classes"
+                "/my-tutor-classes",
+                "/curriculum-weekly-conversations"
             ],
             "post_restrictions": [],
             "depends": [
