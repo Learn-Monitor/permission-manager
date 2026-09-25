@@ -65,6 +65,7 @@ public class UserEffect {
     }
 
     public static void registerAll() {
+        PermissionNode.loadSnapshot();
         // Permission metadata is immutable for the duration of this rebuild. Reusing the
         // snapshot avoids rescanning the registry once per user and preserves lookup order.
         Permission[] allPermissions = Permission.getAll().toArray(new Permission[0]);
