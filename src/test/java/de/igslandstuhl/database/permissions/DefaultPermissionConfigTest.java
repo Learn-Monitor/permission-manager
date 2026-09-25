@@ -67,6 +67,15 @@ class DefaultPermissionConfigTest {
     }
 
     @Test
+    void tutorAssignmentsScriptIsAnExplicitStandardFile() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> enrollment = permissionByName(permissions, "curriculum_manage_enrollment");
+
+        assertTrue(paths(enrollment).contains("/tutor-assignments.js"));
+        assertEquals(List.of("admin"), defaultsForPath(permissions, "/tutor-assignments.js"));
+    }
+
+    @Test
     void adminPolishStudentManagementRoutesAreAdminOnlyAndDropHardDelete() throws IOException {
         List<Map<String, Object>> permissions = allPermissions(config());
         Map<String, Object> manageStudents = permissionByName(permissions, "manage_students");
