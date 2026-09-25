@@ -872,6 +872,7 @@
             "name": "curriculum_tutor_context",
             "description": "Allows teachers to view their own semester-scoped tutor classes.",
             "paths": [
+                "/weekly-conversations.js",
                 "/my-tutor-classes",
                 "/curriculum-weekly-conversations"
             ],
@@ -881,6 +882,7 @@
             ],
             "default": "teacher",
             "allowed_methods": [
+                "GET",
                 "POST"
             ],
             "require_dependencies": true

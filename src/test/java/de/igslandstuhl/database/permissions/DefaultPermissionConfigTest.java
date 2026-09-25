@@ -76,6 +76,19 @@ class DefaultPermissionConfigTest {
     }
 
     @Test
+    void weeklyConversationScriptAndApisShareTeacherTutorContext() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> tutorContext = permissionByName(permissions, "curriculum_tutor_context");
+
+        assertTrue(paths(tutorContext).containsAll(List.of(
+            "/weekly-conversations.js",
+            "/my-tutor-classes",
+            "/curriculum-weekly-conversations")));
+        assertEquals(List.of("teacher"), defaultsForPath(permissions, "/weekly-conversations.js"));
+        assertEquals(List.of("GET", "POST"), tutorContext.get("allowed_methods"));
+    }
+
+    @Test
     void adminPolishStudentManagementRoutesAreAdminOnlyAndDropHardDelete() throws IOException {
         List<Map<String, Object>> permissions = allPermissions(config());
         Map<String, Object> manageStudents = permissionByName(permissions, "manage_students");
