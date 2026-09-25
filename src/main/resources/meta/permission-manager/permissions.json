@@ -136,8 +136,10 @@
                 "/curriculum-budget",
                 "/flexible-tasks",
                 "/curriculum-progress",
+                "/curriculum-teacher-roster",
                 "/get-permissions",
-                "/flexible-curriculum-structure"
+                "/flexible-curriculum-structure",
+                "/curriculum-student-progress-detail"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -172,6 +174,23 @@
             ],
             "default": "teacher",
             "require_dependencies": true
+        },
+        {
+            "name": "curriculum_assess_students",
+            "description": "Allows teachers to assess student curriculum stages in their canonical teaching context.",
+            "paths": [
+                "/set-curriculum-stage-assessment"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true,
+            "exact_default": true
         },
         {
             "name": "curriculum_manage_central",
@@ -209,7 +228,8 @@
             "paths": [
                 "/style.css",
                 "/student-database.js",
-                "/favicon.ico"
+                "/favicon.ico",
+                "/teacher-navigation.js"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -286,9 +306,14 @@
             "description": "Allows adding and removing students, and viewing the manage_students page.",
             "paths": [
                 "/manage_students",
+                "/manage_students.js",
+                "/students",
+                "/archived-students",
                 "/add-students",
-                "/edit-student-profile"
-                ,"/delete-student"
+                "/edit-student-profile",
+                "/admin-student-profile.js",
+                "/archive-student",
+                "/reactivate-student"
             ],
             "post_restrictions": [],
             "depends": [
@@ -502,6 +527,7 @@
                 "/build_subject.js",
                 "/build_class.js",
                 "/build_teacher_dashboard.js",
+                "/admin-dashboard.js",
                 "/plugin-list",
                 "/add-students",
                 "/add-teachers",
@@ -694,7 +720,8 @@
                 "/attendance-admin",
                 "/attendance-admin.js",
                 "/attendance-admin-data",
-                "/attendance-location-save"
+                "/attendance-location-save",
+                "/attendance-location-delete"
             ],
             "post_restrictions": [],
             "depends": [
@@ -787,7 +814,8 @@
             "description": "Allows students to read their own assigned curriculum progress.",
             "paths": [
                 "/my-curriculum-progress",
-                "/my-curriculum-catalog"
+                "/my-curriculum-catalog",
+                "/my-curriculum-subjects"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -820,6 +848,8 @@
                 "/curriculum-enrollment-catalog",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
+                "/curriculum-tutor-assignments",
+                "/assign-class-tutors",
                 "/curriculum-wpf-roster",
                 "/assign-curriculum-wpf",
                 "/create-curriculum-semester",
@@ -831,6 +861,23 @@
                 "curriculum_view"
             ],
             "default": "admin",
+            "allowed_methods": [
+                "POST"
+            ],
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_tutor_context",
+            "description": "Allows teachers to view their own semester-scoped tutor classes.",
+            "paths": [
+                "/my-tutor-classes",
+                "/curriculum-weekly-conversations"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
             "allowed_methods": [
                 "POST"
             ],

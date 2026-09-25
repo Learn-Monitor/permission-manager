@@ -31,7 +31,8 @@ import de.igslandstuhl.database.server.webserver.requests.*;
 class CurriculumPermissionTest {
     private static final Map<String, List<String>> ROUTES = Map.of(
         "curriculum_view", List.of("/curriculum.js", "/curriculum-catalog", "/curriculum-structure",
-            "/curriculum-budget", "/flexible-tasks", "/curriculum-progress", "/flexible-curriculum-structure"),
+            "/curriculum-budget", "/flexible-tasks", "/curriculum-progress", "/curriculum-teacher-roster",
+            "/flexible-curriculum-structure", "/curriculum-student-progress-detail"),
         "curriculum_manage_flexible", List.of("/add-flexible-task", "/edit-flexible-task", "/add-flexible-topic", "/rename-flexible-topic"),
         "curriculum_complete_flexible", List.of("/complete-flexible-task"),
         "curriculum_manage_central", List.of("/add-curriculum-topic", "/rename-topic",
@@ -39,7 +40,7 @@ class CurriculumPermissionTest {
             "/preview-central-curriculum-import", "/import-central-curriculum"));
 
     private static final Map<String,List<String>> CONTEXT_ROUTES = Map.of(
-        "curriculum_student_progress",List.of("/my-curriculum-progress"),
+        "curriculum_student_progress",List.of("/my-curriculum-progress","/my-curriculum-catalog","/my-curriculum-subjects"),
         "curriculum_assign_context",List.of("/curriculum-students","/assign-curriculum-context",
             "/curriculum-transfer-preview","/transfer-curriculum-context"));
 
@@ -267,9 +268,31 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void adminPolishStudentManagementRoutesAreAdminOnlyAtRuntime() {
+        for (String path : List.of(
+                "/manage_students",
+                "/manage_students.js",
+                "/students",
+                "/archived-students",
+                "/edit-student-profile",
+                "/admin-student-profile.js",
+                "/archive-student",
+                "/reactivate-student",
+                "/admin-dashboard.js")) {
+            assertAccess(admin, path, true);
+            assertAccess(teacher, path, false);
+            assertAccess(student, path, false);
+        }
+
+        for (User user : List.of(admin, teacher, student, User.ANONYMOUS)) {
+            assertAccess(user, "/delete-student", false);
+        }
+    }
+
+    @Test
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
-            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment").contains(p.getName()))
+            .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment","curriculum_assess_students","curriculum_tutor_context").contains(p.getName()))
             .map(manager.permissionEffectRegistry()::get).toList();
         for (User user : List.of(teacher, admin, student, User.ANONYMOUS)) {
             var active = legacy.stream().filter(e -> user == User.ANONYMOUS
@@ -321,7 +344,8 @@ class CurriculumPermissionTest {
         Set<String> expected=new HashSet<>();CONTEXT_ROUTES.values().forEach(expected::addAll);
         for(var track:tracks.values()) {
             Map<String,Map<String,String>> before=(Map)track.get("before"),after=(Map)track.get("after");
-            Set<String> added=new HashSet<>();
+            Set<String> added=new HashSet<>(before.get("POST").keySet());
+            added.retainAll(expected);
             for(String method:List.of("GET","POST")) {
                 Set<String> paths=new HashSet<>(after.get(method).keySet());paths.removeAll(before.get(method).keySet());
                 if(method.equals("GET"))assertTrue(paths.isEmpty());
@@ -372,6 +396,52 @@ class CurriculumPermissionTest {
             var effect=manager.permissionEffectRegistry().get(Permission.getByName(name));
             assertEquals(0,effect.depends().length);
         }
+    }
+
+    @Test
+    void curriculumAssessmentIsOwnedByOneTeacherOnlyPostPermissionWithViewDependency() throws Exception {
+        String path = "/set-curriculum-stage-assessment";
+        Map<String, Object> config = config();
+        List<Map<String, Object>> permissions = Stream.of("flat", "generics")
+            .flatMap(key -> ((List<Map<String, Object>>) config.get(key)).stream())
+            .toList();
+        List<Map<String, Object>> owners = permissions.stream()
+            .filter(permission -> ((List<?>) permission.get("paths")).contains(path))
+            .toList();
+        assertEquals(1, owners.size());
+
+        Map<String, Object> permission = owners.get(0);
+        assertEquals("curriculum_assess_students", permission.get("name"));
+        assertEquals("teacher", permission.get("default"));
+        assertEquals(true, permission.get("exact_default"));
+        assertEquals(List.of(), permission.get("post_restrictions"));
+        assertEquals(List.of("curriculum_view"), permission.get("depends"));
+        assertEquals(true, permission.get("require_dependencies"));
+        assertEquals(List.of("POST"), permission.get("allowed_methods"));
+
+        for (User user : List.of(teacher, admin, student, User.ANONYMOUS)) {
+            assertContextAccess(user, path, RequestType.POST, user == teacher);
+            assertContextAccess(user, path, RequestType.GET, false);
+            assertContextAccess(user, path, null, false);
+        }
+
+        assertTrue(node(teacher, "curriculum_assess_students").isActive());
+        node(teacher, "curriculum_assess_students").setActive(false);
+        UserEffect.registerAll();
+        assertContextAccess(teacher, path, RequestType.POST, false);
+
+        node(teacher, "curriculum_assess_students").setActive(true);
+        UserEffect.registerAll();
+        assertContextAccess(teacher, path, RequestType.POST, true);
+
+        node(teacher, "curriculum_view").setActive(false);
+        UserEffect.registerAll();
+        assertTrue(node(teacher, "curriculum_assess_students").isActive());
+        assertContextAccess(teacher, path, RequestType.POST, false);
+
+        node(teacher, "curriculum_view").setActive(true);
+        UserEffect.registerAll();
+        assertContextAccess(teacher, path, RequestType.POST, true);
     }
 
     @Test
