@@ -1,8 +1,10 @@
 package de.igslandstuhl.database.permissions;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.api.User;
@@ -11,7 +13,12 @@ import de.igslandstuhl.database.server.sql.SQLHelper;
 import de.igslandstuhl.database.server.webserver.access.AccessLevel;
 
 public class PermissionNode {
+    // Keep the list as the resettable cache state used by existing integrations; the map
+    // makes normal lookups independent of the number of users and permissions.
     private static final List<PermissionNode> cache = new LinkedList<>();
+    private static final Map<CacheKey, PermissionNode> index = new HashMap<>();
+
+    private record CacheKey(String username, String permissionName) {}
 
     private final Permission permission;
     private final String username;
@@ -65,7 +72,9 @@ public class PermissionNode {
     }
 
     public static PermissionNode getPermissionNode(String username, Permission permission) {
-        PermissionNode node = cache.stream().filter((p) -> p.getUsername().equals(username) && p.getPermission().equals(permission)).findAny().orElse(null);
+        CacheKey key = new CacheKey(username, permission.getName());
+        if (cache.isEmpty()) index.clear();
+        PermissionNode node = index.get(key);
         if (node != null) return node;
 
         AtomicReference<PermissionNode> nodeRef = new AtomicReference<>();
@@ -94,6 +103,7 @@ public class PermissionNode {
             node.insertIntoDatabase();
         }
         cache.add(node);
+        index.put(key, node);
         return node;
     }
 

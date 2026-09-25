@@ -65,10 +65,13 @@ public class UserEffect {
     }
 
     public static void registerAll() {
+        // Permission metadata is immutable for the duration of this rebuild. Reusing the
+        // snapshot avoids rescanning the registry once per user and preserves lookup order.
+        Permission[] allPermissions = Permission.getAll().toArray(new Permission[0]);
         User.getAllUsers().forEach((u) -> {
             Permission[] activePermissions;
             if (u == User.ANONYMOUS) {
-                activePermissions = Permission.getAll().stream()
+                activePermissions = Arrays.stream(allPermissions)
                 .map(PermissionManager.getInstance().permissionEffectRegistry()::get)
                 .filter(Objects::nonNull)
                 .filter((e) -> e.defaultLevel() == AccessLevel.PUBLIC)
@@ -77,7 +80,7 @@ public class UserEffect {
             } else {
                 // Get permissions directly assigned to the user
                 Set<Permission> permissions = new LinkedHashSet<>(
-                    Permission.getAll().stream()
+                    Arrays.stream(allPermissions)
                         // Retired definitions can remain in existing databases. They have
                         // no current effect and must not create default nodes for new users.
                         .filter(p -> PermissionManager.getInstance().permissionEffectRegistry().get(p) != null)
