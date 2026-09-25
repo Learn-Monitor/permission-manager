@@ -1,8 +1,10 @@
 package de.igslandstuhl.database.permissions;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.server.Server;
@@ -10,6 +12,9 @@ import de.igslandstuhl.database.server.sql.SQLHelper;
 
 public class RoleNode {
     private static final List<RoleNode> cache = new LinkedList<>();
+    private static final Map<CacheKey, RoleNode> index = new HashMap<>();
+
+    private record CacheKey(String username, String roleName) {}
 
     private final Role role;
     private final String username;
@@ -55,7 +60,7 @@ public class RoleNode {
     private void insertIntoDatabase() {
         try {
             Server.getInstance().getConnection().executeVoidProcessSecure(
-                SQLHelper.getAddObjectProcess("user_role", username, role.getName())
+                SQLHelper.getAddObjectProcess("user_role", username, role.getName(), String.valueOf(active))
             );
         } catch (SQLException e) {
             PermissionManager.getInstance().getLogger().error("Failed to insert RoleNode for user \"{}\" and role \"{}\" to database", username, role.getName(), e);
@@ -63,10 +68,9 @@ public class RoleNode {
     }
 
     public static RoleNode getRoleNode(String username, Role role) {
-        RoleNode node = cache.stream()
-            .filter((r) -> r.getUsername().equals(username) && r.getRole().equals(role))
-            .findAny()
-            .orElse(null);
+        CacheKey key = new CacheKey(username, role.getName());
+        if (cache.isEmpty()) index.clear();
+        RoleNode node = index.get(key);
         if (node != null) return node;
 
         AtomicReference<RoleNode> nodeRef = new AtomicReference<>();
@@ -91,6 +95,7 @@ public class RoleNode {
             node.insertIntoDatabase();
         }
         cache.add(node);
+        index.put(key, node);
         return node;
     }
 
