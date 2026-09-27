@@ -4,8 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,11 +26,37 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import de.igslandstuhl.database.server.Server;
+import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.server.sql.SQLiteConnection;
 import de.igslandstuhl.database.server.sql.SQLHelper;
 import de.igslandstuhl.database.server.sql.SQLVoidProcess;
 
 class PermissionNodePersistenceTest {
+    @Test
+    void snapshotServesExistingNodesWithoutPerNodeQuery() throws Exception {
+        Permission permission = new Permission("view_grades", "View grades");
+        PermissionManager manager = mock(PermissionManager.class);
+        Registry<String, Permission> permissions = new Registry<>();
+        permissions.register(permission.getName(), permission);
+        when(manager.permissionRegistry()).thenReturn(permissions);
+        Server server = mock(Server.class);
+        try (MockedStatic<PermissionManager> managerMock = mockStatic(PermissionManager.class);
+             MockedStatic<Server> serverMock = mockStatic(Server.class)) {
+            managerMock.when(PermissionManager::getInstance).thenReturn(manager);
+            serverMock.when(Server::getInstance).thenReturn(server);
+            doAnswer(call -> {
+                @SuppressWarnings("unchecked")
+                java.util.function.Consumer<String[]> callback = call.getArgument(0);
+                callback.accept(new String[] {"view_grades", "student", "false"});
+                return null;
+            }).when(server).processRequest(any(), eq("get_all_permission_nodes"), any(String[].class));
+
+            assertTrue(PermissionNode.loadSnapshot());
+            assertFalse(PermissionNode.getPermissionNode("student", permission).isActive());
+            verify(server, never()).processRequest(any(), eq("is_active_node"), any(String[].class), any(String[].class));
+        }
+    }
+
     @Test
     void insertIntoDatabasePassesPermissionUsernameAndActiveInSqlOrder() throws Exception {
         PermissionNode node = new PermissionNode(new Permission("view_grades", "View grades"), "student", false);
