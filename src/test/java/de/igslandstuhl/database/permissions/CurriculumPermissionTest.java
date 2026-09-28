@@ -311,6 +311,17 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void tutorContextOwnsWeeklyScriptAndGraduationPostWithoutWildcard() {
+        Map<String, Object> tutor = ((List<Map<String, Object>>) configUnchecked().get("flat")).stream()
+            .filter(p -> "curriculum_tutor_context".equals(p.get("name"))).findFirst().orElseThrow();
+        assertEquals(List.of("/my-tutor-classes", "/curriculum-weekly-conversations",
+            "/change-tutor-graduation", "/weekly-conversations.js"), tutor.get("paths"));
+        assertEquals(List.of("GET", "POST"), tutor.get("allowed_methods"));
+        assertFalse(((List<String>) tutor.get("paths")).contains("*"));
+        assertEquals("teacher", tutor.get("default"));
+    }
+
+    @Test
     void contextDefaultsMatchBackendRolesWithoutTeacherOrAnonymousGrants() {
         for(User user:List.of(student,teacher,admin,User.ANONYMOUS)) {
             CONTEXT_ROUTES.forEach((name,paths)->{

@@ -872,7 +872,8 @@
             "paths": [
                 "/my-tutor-classes",
                 "/curriculum-weekly-conversations",
-                "/change-tutor-graduation"
+                "/change-tutor-graduation",
+                "/weekly-conversations.js"
             ],
             "post_restrictions": [],
             "depends": [
@@ -880,6 +881,7 @@
             ],
             "default": "teacher",
             "allowed_methods": [
+                "GET",
                 "POST"
             ],
             "require_dependencies": true
