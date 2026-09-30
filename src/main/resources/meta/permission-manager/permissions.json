@@ -41,7 +41,9 @@
                 "/cancel-task",
                 "/lock-task",
                 "/reopen-task",
-                "/begin-task"
+                "/begin-task",
+                "/begin-flexible-task",
+                "/cancel-flexible-task"
             ],
             "post_restrictions": [
                 {
@@ -422,7 +424,8 @@
             "name": "student",
             "description": "Allows choosing tasks.",
             "paths": [
-                "/begin-task"
+                "/begin-task",
+                "/begin-flexible-task"
             ],
             "post_restrictions": [],
             "depends": [
@@ -434,7 +437,8 @@
             "name": "cancel_task",
             "description": "Allows cancelling a selected task.",
             "paths": [
-                "/cancel-task"
+                "/cancel-task",
+                "/cancel-flexible-task"
             ],
             "post_restrictions": [],
             "depends": [

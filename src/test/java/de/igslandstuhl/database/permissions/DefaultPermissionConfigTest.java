@@ -30,6 +30,25 @@ class DefaultPermissionConfigTest {
     }
 
     @Test
+    void flexibleStudentLifecycleRoutesUseTheScopedChangePermissionAndExistingStudentCompat() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> scopedChange = permissionByName(permissions, "change_student_data.$schoolClass.$subject");
+        Map<String, Object> student = permissionByName(permissions, "student");
+        Map<String, Object> cancel = permissionByName(permissions, "cancel_task");
+        Map<String, Object> coreUserCompat = permissionByName(permissions, "core_user_compat");
+
+        for (String path : List.of("/begin-flexible-task", "/cancel-flexible-task")) {
+            assertTrue(paths(scopedChange).contains(path), path);
+            assertFalse(paths(scopedChange).contains("*"), path);
+            assertFalse(paths(coreUserCompat).contains(path), path);
+        }
+        assertTrue(paths(student).contains("/begin-flexible-task"));
+        assertTrue(paths(cancel).contains("/cancel-flexible-task"));
+        assertTrue(defaultsForPath(permissions, "/begin-flexible-task").contains("user"));
+        assertTrue(defaultsForPath(permissions, "/cancel-flexible-task").contains("user"));
+    }
+
+    @Test
     void arcanumRoutesPreserveRoleBoundaries() throws IOException {
         List<Map<String, Object>> permissions = allPermissions(config());
 
