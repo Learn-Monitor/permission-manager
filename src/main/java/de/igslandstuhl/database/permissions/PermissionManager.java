@@ -95,6 +95,7 @@ public class PermissionManager extends Plugin {
         PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
         getLogger().info("Registering user effects...");
         UserEffect.registerAll();
+        UserAccountDeletedListener.getInstance().register();
         getLogger().info("Registering request handlers...");
         Registry.sqlRequestHandlerRegistry().register("list-permissions", (u) -> {
             return Permission.getAll()

@@ -355,7 +355,8 @@
                 "/teacher-subjects",
                 "/add-subject-to-teacher",
                 "/add-class-to-teacher"
-                ,"/edit-teacher-profile"
+                ,"/edit-teacher-profile",
+                "/delete-teacher"
             ],
             "post_restrictions": [],
             "depends": [
@@ -542,6 +543,7 @@
                 "/student-list",
                 "/class-subjects",
                 "/delete-subject",
+                "/delete-teacher",
                 "/edit-subject",
                 "/delete-class",
                 "/edit-class",

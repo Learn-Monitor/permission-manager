@@ -104,4 +104,8 @@ public class UserEffect {
         if (user == null) user = User.ANONYMOUS;
         return registry.get(user);
     }
+
+    static void invalidateUsername(String username) {
+        registry.keyStream().filter(user -> username.equals(user.getUsername())).toList().forEach(registry::unregister);
+    }
 }

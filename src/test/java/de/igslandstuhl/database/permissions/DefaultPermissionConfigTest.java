@@ -118,6 +118,27 @@ class DefaultPermissionConfigTest {
     }
 
     @Test
+    void safeTeacherDeletionIsRegisteredOnlyForAdmins() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> manageTeachers = permissionByName(permissions, "manage_teachers");
+        Map<String, Object> managePermissions = permissionByName(permissions, "manage_permissions");
+        assertTrue(paths(manageTeachers).contains("/delete-teacher"));
+        assertTrue(paths(managePermissions).contains("/delete-teacher"));
+        assertFalse(paths(manageTeachers).contains("*"));
+        assertFalse(paths(managePermissions).contains("*"));
+        assertAdminOnlyDefault(permissions, "/delete-teacher");
+        assertEquals(List.of("admin", "admin"), defaultsForPath(permissions, "/delete-teacher"));
+    }
+
+    @Test
+    void subjectDeletionPreflightRemainsInsideTheAdminSubjectPermission() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> manageSubjects = permissionByName(permissions, "manage_subjects");
+        assertTrue(paths(manageSubjects).contains("/delete-subject"));
+        assertAdminOnlyDefault(permissions, "/delete-subject");
+    }
+
+    @Test
     void adminDashboardScriptIsAdminOnly() throws IOException {
         List<Map<String, Object>> permissions = allPermissions(config());
         Map<String, Object> coreAdmin = permissionByName(permissions, "core_admin_compat");

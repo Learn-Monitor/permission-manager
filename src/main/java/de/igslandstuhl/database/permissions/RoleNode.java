@@ -1,20 +1,26 @@
 package de.igslandstuhl.database.permissions;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.server.Server;
 import de.igslandstuhl.database.server.sql.SQLHelper;
 
 public class RoleNode {
-    private static final List<RoleNode> cache = new LinkedList<>();
-    private static final Map<CacheKey, RoleNode> index = new HashMap<>();
+    private static final List<RoleNode> cache = new CopyOnWriteArrayList<>();
+    private static final Map<CacheKey, RoleNode> index = new ConcurrentHashMap<>();
 
     private record CacheKey(String username, String roleName) {}
+
+    static void invalidateUsername(String username) {
+        cache.removeIf(node -> node.username.equals(username));
+        index.keySet().removeIf(key -> key.username().equals(username));
+    }
 
     private final Role role;
     private final String username;

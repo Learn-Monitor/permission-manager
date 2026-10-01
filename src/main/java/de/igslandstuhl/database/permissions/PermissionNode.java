@@ -1,10 +1,10 @@
 package de.igslandstuhl.database.permissions;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.api.User;
@@ -15,11 +15,16 @@ import de.igslandstuhl.database.server.webserver.access.AccessLevel;
 public class PermissionNode {
     // Keep the list as the resettable cache state used by existing integrations; the map
     // makes normal lookups independent of the number of users and permissions.
-    private static final List<PermissionNode> cache = new LinkedList<>();
-    private static final Map<CacheKey, PermissionNode> index = new HashMap<>();
-    private static boolean snapshotLoaded;
+    private static final List<PermissionNode> cache = new CopyOnWriteArrayList<>();
+    private static final Map<CacheKey, PermissionNode> index = new ConcurrentHashMap<>();
+    private static volatile boolean snapshotLoaded;
 
     private record CacheKey(String username, String permissionName) {}
+
+    static void invalidateUsername(String username) {
+        cache.removeIf(node -> node.username.equals(username));
+        index.keySet().removeIf(key -> key.username().equals(username));
+    }
 
     private final Permission permission;
     private final String username;
