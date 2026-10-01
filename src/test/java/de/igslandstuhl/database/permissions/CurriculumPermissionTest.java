@@ -272,6 +272,8 @@ class CurriculumPermissionTest {
         for (String path : List.of(
                 "/manage_students",
                 "/manage_students.js",
+                "/manage-teachers.js",
+                "/manage-classes.js",
                 "/students",
                 "/archived-students",
                 "/edit-student-profile",

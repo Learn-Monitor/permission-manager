@@ -294,7 +294,8 @@
             "description": "Allows adding and removing classes.",
             "paths": [
                 "/add-class",
-                "/delete-class"
+                "/delete-class",
+                "/manage-classes.js"
             ],
             "post_restrictions": [],
             "depends": [
@@ -356,7 +357,8 @@
                 "/add-subject-to-teacher",
                 "/add-class-to-teacher"
                 ,"/edit-teacher-profile",
-                "/delete-teacher"
+                "/delete-teacher",
+                "/manage-teachers.js"
             ],
             "post_restrictions": [],
             "depends": [
