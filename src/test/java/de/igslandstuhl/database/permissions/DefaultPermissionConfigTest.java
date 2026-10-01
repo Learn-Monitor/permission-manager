@@ -127,7 +127,7 @@ class DefaultPermissionConfigTest {
         assertFalse(paths(manageTeachers).contains("*"));
         assertFalse(paths(managePermissions).contains("*"));
         assertAdminOnlyDefault(permissions, "/delete-teacher");
-        assertEquals(List.of("admin", "admin"), defaultsForPath(permissions, "/delete-teacher"));
+        assertEquals(List.of("admin"), defaultsForPath(permissions, "/delete-teacher"));
     }
 
     @Test
