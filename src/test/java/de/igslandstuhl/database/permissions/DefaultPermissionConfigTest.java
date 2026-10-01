@@ -92,6 +92,8 @@ class DefaultPermissionConfigTest {
 
         assertTrue(paths(enrollment).contains("/tutor-assignments.js"));
         assertEquals(List.of("admin"), defaultsForPath(permissions, "/tutor-assignments.js"));
+        assertTrue(paths(enrollment).contains("/assign-individual-grade-teacher"));
+        assertEquals(List.of("admin"), defaultsForPath(permissions, "/assign-individual-grade-teacher"));
     }
 
     @Test

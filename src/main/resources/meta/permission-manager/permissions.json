@@ -854,6 +854,7 @@
                 "/tutor-assignments.js",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
+                "/assign-individual-grade-teacher",
                 "/curriculum-tutor-assignments",
                 "/assign-class-tutors",
                 "/curriculum-wpf-roster",
