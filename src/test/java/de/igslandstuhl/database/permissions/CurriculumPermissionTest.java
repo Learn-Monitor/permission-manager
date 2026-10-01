@@ -278,6 +278,7 @@ class CurriculumPermissionTest {
                 "/admin-student-profile.js",
                 "/archive-student",
                 "/reactivate-student",
+                "/add-subject-with-type",
                 "/admin-dashboard.js",
                 "/admin-section-navigation.js",
                 "/admin-plugins.js",

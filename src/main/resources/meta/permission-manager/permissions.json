@@ -541,6 +541,7 @@
                 "/add-teachers",
                 "/add-teacher",
                 "/add-subject",
+                "/add-subject-with-type",
                 "/add-class",
                 "/lpt-file",
                 "/student-list",
