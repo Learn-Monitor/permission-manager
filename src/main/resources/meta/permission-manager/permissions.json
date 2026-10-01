@@ -851,6 +851,7 @@
             "description": "Assign grade subjects, individual subject groups, teachers, and active curriculum semesters.",
             "paths": [
                 "/curriculum-enrollment-catalog",
+                "/curriculum-course-groups",
                 "/tutor-assignments.js",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
