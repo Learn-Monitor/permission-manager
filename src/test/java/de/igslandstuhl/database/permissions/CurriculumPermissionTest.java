@@ -278,7 +278,10 @@ class CurriculumPermissionTest {
                 "/admin-student-profile.js",
                 "/archive-student",
                 "/reactivate-student",
-                "/admin-dashboard.js")) {
+                "/admin-dashboard.js",
+                "/admin-section-navigation.js",
+                "/admin-plugins.js",
+                "/admin-subject-management.js")) {
             assertAccess(admin, path, true);
             assertAccess(teacher, path, false);
             assertAccess(student, path, false);
