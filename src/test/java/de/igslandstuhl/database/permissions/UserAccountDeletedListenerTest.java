@@ -12,6 +12,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
 
 class UserAccountDeletedListenerTest {
     @SuppressWarnings("unchecked")
@@ -34,18 +35,23 @@ class UserAccountDeletedListenerTest {
         User otherUser = mock(User.class);
         when(deletedUser.getUsername()).thenReturn(deleted);
         when(otherUser.getUsername()).thenReturn(other);
-        new UserEffect(deletedUser, new Permission[0]).register();
-        new UserEffect(otherUser, new Permission[0]).register();
+        PermissionManager manager = mock(PermissionManager.class);
+        try (var managerStatic = mockStatic(PermissionManager.class)) {
+            managerStatic.when(PermissionManager::getInstance).thenReturn(manager);
+            when(manager.permissionEffectRegistry()).thenReturn(new de.igslandstuhl.database.Registry<>());
+            new UserEffect(deletedUser, new Permission[0]).register();
+            new UserEffect(otherUser, new Permission[0]).register();
 
-        UserAccountDeletedListener.getInstance().onEvent(new UserAccountDeletedEvent(deleted));
+            UserAccountDeletedListener.getInstance().onEvent(new UserAccountDeletedEvent(deleted));
 
-        assertNull(UserEffect.get(deletedUser));
-        assertNotNull(UserEffect.get(otherUser));
-        assertEquals(List.of(other), usernames(PermissionNode.class));
-        assertEquals(List.of(other), usernames(RoleNode.class));
-        assertNoCachedIndexEntry(PermissionNode.class, deleted);
-        assertNoCachedIndexEntry(RoleNode.class, deleted);
-        UserAccountDeletedListener.getInstance().onEvent(new UserAccountDeletedEvent(other));
+            assertNull(UserEffect.get(deletedUser));
+            assertNotNull(UserEffect.get(otherUser));
+            assertEquals(List.of(other), usernames(PermissionNode.class));
+            assertEquals(List.of(other), usernames(RoleNode.class));
+            assertNoCachedIndexEntry(PermissionNode.class, deleted);
+            assertNoCachedIndexEntry(RoleNode.class, deleted);
+            UserAccountDeletedListener.getInstance().onEvent(new UserAccountDeletedEvent(other));
+        }
     }
 
     @SuppressWarnings("unchecked")

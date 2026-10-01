@@ -123,7 +123,7 @@ class DefaultPermissionConfigTest {
         Map<String, Object> manageTeachers = permissionByName(permissions, "manage_teachers");
         Map<String, Object> managePermissions = permissionByName(permissions, "manage_permissions");
         assertTrue(paths(manageTeachers).contains("/delete-teacher"));
-        assertTrue(paths(managePermissions).contains("/delete-teacher"));
+        assertFalse(paths(managePermissions).contains("/delete-teacher"));
         assertFalse(paths(manageTeachers).contains("*"));
         assertFalse(paths(managePermissions).contains("*"));
         assertAdminOnlyDefault(permissions, "/delete-teacher");

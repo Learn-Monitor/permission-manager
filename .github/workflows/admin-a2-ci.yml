@@ -28,10 +28,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build A2 Core API dependency
         working-directory: student-database
-        run: ./gradlew jar --no-daemon
+        run: ./gradlew shadowJar --no-daemon
       - name: Test and build plugin
         run: |
-          core_jar="$(find student-database/build/libs -maxdepth 1 -type f -name 'student-database-v2.0.0.jar' | head -n 1)"
+          core_jar="$(find student-database/build/libs -maxdepth 1 -type f -name 'student-database-v2.0.0-fat.jar' | head -n 1)"
           test -n "$core_jar"
           ./gradlew clean test jar --no-daemon -PstudentDatabaseJar="$core_jar"
         env:

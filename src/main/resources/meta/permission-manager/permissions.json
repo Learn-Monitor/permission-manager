@@ -543,7 +543,6 @@
                 "/student-list",
                 "/class-subjects",
                 "/delete-subject",
-                "/delete-teacher",
                 "/edit-subject",
                 "/delete-class",
                 "/edit-class",
