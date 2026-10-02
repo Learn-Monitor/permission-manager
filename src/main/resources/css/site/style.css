@@ -58,3 +58,9 @@
 .panel h5 {
     font-size: 1.25rem;
 }
+
+/* The core stylesheet gives #dashboard width:100% and padding in content-box.
+ * Keep the permission page inside the viewport on desktop and mobile. */
+#dashboard {
+    box-sizing: border-box;
+}
