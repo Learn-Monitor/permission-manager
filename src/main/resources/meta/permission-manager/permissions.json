@@ -782,7 +782,9 @@
             "description": "Allows teachers and administrators to view student results and load the results script.",
             "paths": [
                 "/student-results",
-                "/build_results.js"
+                "/build_results.js",
+                "/arcanum-student.css",
+                "/arcanum-student-theme.css"
             ],
             "post_restrictions": [],
             "depends": [

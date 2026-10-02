@@ -16,6 +16,12 @@ for (const asset of [
   '/arcanum-inspiration-05-dranbleiben-600e7ad17aac285a.webp',
 ]) assert.ok(publicAssets.paths.includes(asset), `public asset path: ${asset}`);
 
+const resultsTeacher = permissions.flat.find(({name}) => name === 'results_teacher');
+assert.ok(resultsTeacher, 'results teacher permission exists');
+for (const asset of ['/arcanum-student.css', '/arcanum-student-theme.css']) {
+  assert.ok(resultsTeacher.paths.includes(asset), `teacher results asset: ${asset}`);
+}
+
 const css = fs.readFileSync(path.join(__dirname, '../../main/resources/css/site/style.css'), 'utf8');
 assert.match(css, /#dashboard\s*\{[^}]*box-sizing:\s*border-box/);
 
