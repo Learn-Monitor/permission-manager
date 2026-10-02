@@ -21,6 +21,10 @@ assert.ok(resultsTeacher, 'results teacher permission exists');
 for (const asset of ['/arcanum-student.css', '/arcanum-student-theme.css']) {
   assert.ok(resultsTeacher.paths.includes(asset), `teacher results asset: ${asset}`);
 }
+assert.ok(resultsTeacher.paths.includes('/get-plugin'), 'teacher results config access');
+const resultsStudent = permissions.flat.find(({name}) => name === 'results_student');
+assert.ok(resultsStudent, 'results student permission exists');
+assert.ok(resultsStudent.paths.includes('/get-plugin'), 'student results config access');
 
 const css = fs.readFileSync(path.join(__dirname, '../../main/resources/css/site/style.css'), 'utf8');
 assert.match(css, /#dashboard\s*\{[^}]*box-sizing:\s*border-box/);
