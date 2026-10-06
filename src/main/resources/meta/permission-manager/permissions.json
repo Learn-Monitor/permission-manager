@@ -316,7 +316,8 @@
                 "/edit-student-profile",
                 "/admin-student-profile.js",
                 "/archive-student",
-                "/reactivate-student"
+                "/reactivate-student",
+                "/admin-reset-password"
             ],
             "post_restrictions": [],
             "depends": [
@@ -357,6 +358,7 @@
                 "/add-subject-to-teacher",
                 "/add-class-to-teacher"
                 ,"/edit-teacher-profile",
+                "/admin-reset-password",
                 "/delete-teacher",
                 "/manage-teachers.js"
             ],
