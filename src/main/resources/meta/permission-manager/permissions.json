@@ -141,7 +141,9 @@
                 "/curriculum-teacher-roster",
                 "/get-permissions",
                 "/flexible-curriculum-structure",
-                "/curriculum-student-progress-detail"
+                "/curriculum-student-progress-detail",
+                "/flexible-task-delete-preview",
+                "/flexible-topic-delete-preview"
             ],
             "post_restrictions": [],
             "depends": [],
@@ -155,7 +157,9 @@
                 "/add-flexible-task",
                 "/edit-flexible-task",
                 "/add-flexible-topic",
-                "/rename-flexible-topic"
+                "/rename-flexible-topic",
+                "/delete-flexible-task",
+                "/delete-flexible-topic"
             ],
             "post_restrictions": [],
             "depends": [
