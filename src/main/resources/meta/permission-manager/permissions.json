@@ -314,6 +314,7 @@
                 "/archived-students",
                 "/add-students",
                 "/edit-student-profile",
+                "/admin-student-data",
                 "/admin-student-profile.js",
                 "/archive-student",
                 "/reactivate-student",
