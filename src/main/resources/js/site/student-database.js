@@ -55,46 +55,82 @@ function moveSelected(from, to) {
         if (option.toggleCallback) option.toggleCallback();
     });
 }
+
+function createTextElement(tagName, text) {
+    const element = document.createElement(tagName);
+    element.textContent = text ?? '';
+    return element;
+}
+
+function createDualList(selectClass) {
+    const container = document.createElement('div');
+    container.className = 'dlcontainer';
+
+    const availableList = document.createElement('div');
+    availableList.className = 'dlist';
+    availableList.append(
+        createTextElement('h5', 'Verfügbar'),
+        Object.assign(document.createElement('select'), {
+            className: `available ${selectClass}`,
+            multiple: true,
+            size: 12
+        })
+    );
+
+    const buttons = document.createElement('div');
+    buttons.className = 'dlbuttons';
+    buttons.append(
+        Object.assign(createTextElement('button', '>'), {type: 'button', className: 'to-right'}),
+        Object.assign(createTextElement('button', '<'), {type: 'button', className: 'to-left'})
+    );
+
+    const selectedList = document.createElement('div');
+    selectedList.className = 'dlist';
+    selectedList.append(
+        createTextElement('h5', 'Ausgewählt'),
+        Object.assign(document.createElement('select'), {
+            className: `selected ${selectClass}`,
+            multiple: true,
+            size: 12
+        })
+    );
+
+    container.append(availableList, buttons, selectedList);
+    return container;
+}
+
+function registerDualListHandlers(container) {
+    const available = container.querySelector('.available');
+    const selected = container.querySelector('.selected');
+    container.querySelector('.to-right').addEventListener('click', () => {
+        moveSelected(available, selected);
+    });
+    container.querySelector('.to-left').addEventListener('click', () => {
+        moveSelected(selected, available);
+    });
+    available.addEventListener('dblclick', () => {
+        moveSelected(available, selected);
+    });
+    selected.addEventListener('dblclick', () => {
+        moveSelected(selected, available);
+    });
+}
+
 function loadRoleSection(role, permissions, users) {
     return createPanel(role.name, document.createElement("div"), async (header, body) => {
         header.textContent = role.name;
-        body.innerHTML = `
-<p>${role.description}</p>
-<h4>Zugriffsberechtigungen</h4>
+        const description = createTextElement('p', role.description);
+        const permissionHeading = createTextElement('h4', 'Zugriffsberechtigungen');
+        const permissionLists = createDualList('permission-select');
+        const userHeading = createTextElement('h4', 'Zugewiesene Nutzer');
+        const userLists = createDualList('user-select');
+        const deleteButton = createTextElement('button', 'Rolle löschen');
+        deleteButton.type = 'button';
+        deleteButton.dataset.action = 'delete-role';
+        deleteButton.dataset.role = role.name;
+        deleteButton.addEventListener('click', () => deleteRole(deleteButton.dataset.role));
+        body.replaceChildren(description, permissionHeading, permissionLists, userHeading, userLists, deleteButton);
 
-<div class="dlcontainer">
-    <div class="dlist">
-        <h5>Verfügbar</h5>
-        <select class="available permission-select" multiple size="12"></select>
-    </div>
-    <div class="dlbuttons">
-        <button class="to-right">&gt;</button>
-        <button class="to-left">&lt;</button>
-    </div>
-    <div class="dlist">
-        <h5>Ausgewählt</h5>
-        <select class="selected permission-select" multiple size="12"></select>
-    </div>
-</div>
-
-<h4>Zugewiesene Nutzer</h4>
-<div class="dlcontainer">
-    <div class="dlist">
-        <h5>Verfügbar</h5>
-        <select class="available user-select" multiple size="12"></select>
-    </div>
-    <div class="dlbuttons">
-        <button class="to-right">&gt;</button>
-        <button class="to-left">&lt;</button>
-    </div>
-    <div class="dlist">
-        <h5>Ausgewählt</h5>
-        <select class="selected user-select" multiple size="12"></select>
-    </div>
-</div>
-
-<button onclick="deleteRole('${role.name}')">Rolle löschen</button>
-        `;
         const permission_selects = Array.from(body.getElementsByClassName('permission-select'));
         permissions.forEach((p) => {
             const perm_option = document.createElement('option');
@@ -125,26 +161,7 @@ function loadRoleSection(role, permissions, users) {
                 user_selects[0].appendChild(user_option);
             }
         });
-        body.querySelectorAll(".dlcontainer").forEach(container => {
-            const available = container.querySelector(".available");
-            const selected = container.querySelector(".selected");
-
-            container.querySelector(".to-right").addEventListener("click", () => {
-                moveSelected(available, selected);
-            });
-
-            container.querySelector(".to-left").addEventListener("click", () => {
-                moveSelected(selected, available);
-            });
-
-            available.addEventListener("dblclick", () => {
-                moveSelected(available, selected);
-            });
-
-            selected.addEventListener("dblclick", () => {
-                moveSelected(selected, available);
-            });
-        });
+        body.querySelectorAll('.dlcontainer').forEach(registerDualListHandlers);
     })
 }
 async function loadRolesView(rolesContainer) {
@@ -156,4 +173,17 @@ async function loadRolesView(rolesContainer) {
         role_panels[role.name] = roleSection;
         rolesContainer.appendChild(roleSection);
     });
+}
+
+function initializePermissionManager() {
+    const rolesContainer = document.getElementById('roles');
+    if (rolesContainer) loadRolesView(rolesContainer);
+}
+
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePermissionManager);
+    } else {
+        initializePermissionManager();
+    }
 }
