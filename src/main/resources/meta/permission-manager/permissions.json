@@ -585,6 +585,8 @@
             "name": "arcanum_public_assets",
             "description": "Allows the public Arcanum login, logout, inspiration and dashboard image assets used by the demo.",
             "paths": [
+                "/arcanum-login.css",
+                "/arcanum-login.js",
                 "/arcanum-login-background.png",
                 "/arcanum-logo.png",
                 "/arcanum-stamp.png",

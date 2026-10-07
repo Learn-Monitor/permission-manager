@@ -133,6 +133,21 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void anonymousUsersCanLoadPublicLoginAssetsButNotTheDashboard() {
+        for (String path : List.of(
+            "/arcanum-login.css",
+            "/arcanum-login.js",
+            "/arcanum-coin-a5c34f85b21b75d5.webp",
+            "/arcanum-logo-b674493ab1b01691.webp",
+            "/arcanum-stamp-b5ab61fed492b500.webp")) {
+            assertEquals(AccessState.PERMITTED,
+                UserEffect.get(User.ANONYMOUS).testAccess(path, mock(HttpRequest.class)), path);
+        }
+        assertEquals(AccessState.UNAUTHORIZED,
+            UserEffect.get(User.ANONYMOUS).testAccess("/dashboard", mock(HttpRequest.class)));
+    }
+
+    @Test
     void retiredPersistedPermissionDoesNotBreakNewUserRegistration() throws Exception {
         Permission retired = new Permission("demo_retired_permission", "Synthetic retired definition");
         retired.register();
