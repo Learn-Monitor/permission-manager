@@ -12,7 +12,7 @@ import de.igslandstuhl.database.server.webserver.access.AccessState;
 import de.igslandstuhl.database.server.webserver.requests.HttpRequest;
 
 public class UserEffect {
-    private static final Registry<User, UserEffect> registry = new Registry<>();
+    private static final Registry<String, UserEffect> registry = new Registry<>();
 
     private final User user;
     
@@ -61,7 +61,7 @@ public class UserEffect {
     }
 
     public void register() {
-        registry.register(user, this);
+        registry.register(user.getUsername(), this);
     }
 
     public static void registerAll() {
@@ -102,10 +102,10 @@ public class UserEffect {
     }
     public static UserEffect get(User user) {
         if (user == null) user = User.ANONYMOUS;
-        return registry.get(user);
+        return registry.get(user.getUsername());
     }
 
     static void invalidateUsername(String username) {
-        registry.keyStream().filter(user -> username.equals(user.getUsername())).toList().forEach(registry::unregister);
+        registry.unregister(username);
     }
 }
