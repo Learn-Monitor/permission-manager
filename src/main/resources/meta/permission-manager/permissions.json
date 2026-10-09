@@ -508,7 +508,8 @@
                 "/change-current-topic",
                 "/complete-task",
                 "/reopen-task",
-                "/lock-task"
+                "/lock-task",
+                "/teacher-dashboard-navigation.js"
             ],
             "post_restrictions": [],
             "depends": [
