@@ -32,6 +32,15 @@ test('results route split remains student versus teacher/admin', () => {
   assert.equal(permission('results_teacher').paths.includes('/results'), false);
 });
 
+test('attendance stylesheet is teacher-only', () => {
+  const attendance = permission('attendance_teacher');
+  assert.ok(attendance);
+  assert.equal(attendance.default, 'teacher');
+  assert.ok(attendance.paths.includes('/attendance.css'));
+  assert.equal(permission('core_public_compat').paths.includes('/attendance.css'), false);
+  assert.equal(permission('core_user_compat').paths.includes('/attendance.css'), false);
+});
+
 test('manage permissions relies on the global site student-database script', () => {
   const template = fs.readFileSync(
     path.join(resources, 'html/admin/manage_permissions.html'),

@@ -758,6 +758,7 @@
             "paths": [
                 "/attendance",
                 "/attendance.js",
+                "/attendance.css",
                 "/attendance-data",
                 "/attendance-manual-arrival",
                 "/attendance-preferences-save"
