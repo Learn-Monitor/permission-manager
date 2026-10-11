@@ -545,6 +545,7 @@
                 "/admin-section-navigation.js",
                 "/admin-plugins.js",
                 "/admin-subject-management.js",
+                "/student-individual-matrix.js",
                 "/plugin-list",
                 "/add-students",
                 "/add-teachers",
