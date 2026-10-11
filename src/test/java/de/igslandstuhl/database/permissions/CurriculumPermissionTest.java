@@ -312,6 +312,51 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void allB4ToB6EnrollmentRoutesHaveOnePostEnrollmentOwner() throws Exception {
+        List<String> routes = List.of(
+            "/curriculum-enrollment-catalog",
+            "/curriculum-course-groups",
+            "/curriculum-tutor-assignments",
+            "/assign-class-tutors",
+            "/assign-class-subject-teacher",
+            "/assign-individual-grade-teacher",
+            "/assign-grade-curriculum",
+            "/create-curriculum-semester",
+            "/activate-curriculum-semester",
+            "/remove-grade-curriculum-subject",
+            "/set-curriculum-subject-type",
+            "/curriculum-individual-student-matrix",
+            "/assign-curriculum-individual-subject");
+        Map<String, Object> config = config();
+        List<Map<String, Object>> permissions = Stream.of("flat", "generics")
+            .flatMap(key -> ((List<Map<String, Object>>) config.get(key)).stream())
+            .toList();
+        Map<String, Object> enrollment = permissions.stream()
+            .filter(permission -> "curriculum_manage_enrollment".equals(permission.get("name")))
+            .findFirst().orElseThrow();
+        List<String> paths = (List<String>) enrollment.get("paths");
+        assertEquals(List.of("GET", "POST"), enrollment.get("allowed_methods"));
+        for (String path : routes) {
+            assertEquals(1, permissions.stream()
+                .filter(permission -> ((List<String>) permission.get("paths")).contains(path))
+                .count(), path);
+            assertTrue(paths.contains(path), path);
+            assertContextAccess(admin, path, RequestType.POST, true);
+            assertContextAccess(teacher, path, RequestType.POST, false);
+            assertContextAccess(student, path, RequestType.POST, false);
+            assertContextAccess(User.ANONYMOUS, path, RequestType.POST, false);
+        }
+
+        User manageSubjectsOnly = user("subjects-only", false, false, true);
+        Permission manageSubjects = Permission.getByName("manage_subjects");
+        assertNotNull(manageSubjects);
+        UserEffect subjectsOnlyEffect = new UserEffect(manageSubjectsOnly, new Permission[]{manageSubjects});
+        for (String path : routes)
+            assertEquals(AccessState.RESTRICTED,
+                subjectsOnlyEffect.testAccess(path, postRequest()), path);
+    }
+
+    @Test
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
             .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment","curriculum_assess_students","curriculum_tutor_context").contains(p.getName()))
@@ -556,6 +601,12 @@ class CurriculumPermissionTest {
         AccessState expected=user==User.ANONYMOUS?AccessState.UNAUTHORIZED:allowed?AccessState.AUTHORIZED:AccessState.RESTRICTED;
         assertEquals(expected,UserEffect.get(user).testAccess(path,request),user.getUsername()+": "+method+" "+path);
         verify(request,atMostOnce()).getRequestType();verifyNoMoreInteractions(request);
+    }
+
+    private static PostRequest postRequest() {
+        PostRequest request = mock(PostRequest.class);
+        when(request.getRequestType()).thenReturn(RequestType.POST);
+        return request;
     }
 
     private void initialize() {

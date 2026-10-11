@@ -911,6 +911,7 @@
                 "/assign-curriculum-individual-subject",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
+                "/assign-class-subject-teacher",
                 "/assign-individual-grade-teacher",
                 "/curriculum-tutor-assignments",
                 "/assign-class-tutors",
