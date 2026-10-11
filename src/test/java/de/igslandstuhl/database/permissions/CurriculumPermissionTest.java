@@ -125,7 +125,7 @@ class CurriculumPermissionTest {
     @Test
     void enrollmentIsAdminOnlyAndPublicationIsStaffOnlyWithViewDependency() {
         for(User user:List.of(admin,teacher,student,User.ANONYMOUS)) {
-            for(String path:List.of("/curriculum-enrollment-catalog","/curriculum-course-groups","/set-curriculum-subject-type","/assign-grade-curriculum","/assign-individual-grade-teacher","/curriculum-wpf-roster","/assign-curriculum-wpf","/create-curriculum-semester","/activate-curriculum-semester","/remove-grade-curriculum-subject"))assertContextAccess(user,path,RequestType.POST,user==admin);
+            for(String path:List.of("/curriculum-enrollment-catalog","/curriculum-course-groups","/assign-grade-curriculum","/assign-individual-grade-teacher","/curriculum-wpf-roster","/assign-curriculum-wpf","/create-curriculum-semester","/activate-curriculum-semester","/remove-grade-curriculum-subject"))assertContextAccess(user,path,RequestType.POST,user==admin);
             for(String path:List.of("/curriculum-releases","/set-curriculum-release"))assertContextAccess(user,path,RequestType.POST,user==admin||user==teacher);
         }
         node(admin,"curriculum_view").setActive(false);node(teacher,"curriculum_view").setActive(false);UserEffect.registerAll();
@@ -324,7 +324,6 @@ class CurriculumPermissionTest {
             "/create-curriculum-semester",
             "/activate-curriculum-semester",
             "/remove-grade-curriculum-subject",
-            "/set-curriculum-subject-type",
             "/curriculum-individual-student-matrix",
             "/assign-curriculum-individual-subject");
         Map<String, Object> config = config();
@@ -354,6 +353,48 @@ class CurriculumPermissionTest {
         for (String path : routes)
             assertEquals(AccessState.RESTRICTED,
                 subjectsOnlyEffect.testAccess(path, postRequest()), path);
+    }
+
+    @Test
+    void manageSubjectsFrontendRoutesUseManageSubjectsPermission() throws Exception {
+        List<String> routes = List.of(
+            "/subject-management-catalog",
+            "/set-subject-grade-activations",
+            "/set-curriculum-subject-type",
+            "/add-subject-with-type",
+            "/edit-subject",
+            "/delete-subject");
+        Map<String, Object> config = config();
+        List<Map<String, Object>> permissions = Stream.of("flat", "generics")
+            .flatMap(key -> ((List<Map<String, Object>>) config.get(key)).stream())
+            .toList();
+        Map<String, Object> subjects = permissions.stream()
+            .filter(permission -> "manage_subjects".equals(permission.get("name")))
+            .findFirst().orElseThrow();
+        List<String> paths = (List<String>) subjects.get("paths");
+        for (String path : routes) {
+            assertTrue(paths.contains(path), path);
+            assertEquals(1, permissions.stream()
+                .filter(permission -> ((List<String>) permission.get("paths")).contains(path))
+                .count(), path);
+            assertContextAccess(admin, path, RequestType.POST, true);
+        }
+
+        User subjectsOnly = user("subjects-only", false, false, true);
+        User curriculumOnly = user("curriculum-only", false, false, true);
+        Permission manage = Permission.getByName("manage_subjects");
+        Permission enrollment = Permission.getByName("curriculum_manage_enrollment");
+        Permission view = Permission.getByName("curriculum_view");
+        assertNotNull(manage); assertNotNull(enrollment); assertNotNull(view);
+        UserEffect subjectsEffect = new UserEffect(subjectsOnly, new Permission[]{manage});
+        UserEffect curriculumEffect = new UserEffect(curriculumOnly, new Permission[]{enrollment});
+        UserEffect unrelatedEffect = new UserEffect(curriculumOnly, new Permission[]{view});
+        for (String path : routes) {
+            assertEquals(AccessState.AUTHORIZED, subjectsEffect.testAccess(path, postRequest()), path);
+            assertEquals(AccessState.RESTRICTED, curriculumEffect.testAccess(path, postRequest()), path);
+            assertEquals(AccessState.RESTRICTED, unrelatedEffect.testAccess(path, postRequest()), path);
+            assertEquals(AccessState.UNAUTHORIZED, UserEffect.get(User.ANONYMOUS).testAccess(path, postRequest()), path);
+        }
     }
 
     @Test
