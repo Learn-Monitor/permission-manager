@@ -419,6 +419,28 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void individualAssignmentRoutesBelongToEnrollmentAndRequirePost() throws Exception {
+        Map<String, Object> config = config();
+        List<Map<String, Object>> permissions = Stream.of("flat", "generics")
+            .flatMap(key -> ((List<Map<String, Object>>) config.get(key)).stream())
+            .toList();
+        Map<String, Object> enrollment = permissions.stream()
+            .filter(permission -> "curriculum_manage_enrollment".equals(permission.get("name")))
+            .findFirst().orElseThrow();
+        List<String> paths = (List<String>) enrollment.get("paths");
+        assertTrue(paths.contains("/curriculum-individual-student-matrix"));
+        assertTrue(paths.contains("/assign-curriculum-individual-subject"));
+        assertEquals(List.of("GET", "POST"), enrollment.get("allowed_methods"));
+
+        for (String path : List.of("/curriculum-individual-student-matrix", "/assign-curriculum-individual-subject")) {
+            assertContextAccess(admin, path, RequestType.POST, true);
+            assertContextAccess(teacher, path, RequestType.POST, false);
+            assertContextAccess(student, path, RequestType.POST, false);
+            assertContextAccess(User.ANONYMOUS, path, RequestType.POST, false);
+        }
+    }
+
+    @Test
     void contextFunctionsDoNotDependOnTeacherViewOrCentralManagement() {
         node(admin,"curriculum_view").setActive(false);
         node(admin,"curriculum_manage_central").setActive(false);

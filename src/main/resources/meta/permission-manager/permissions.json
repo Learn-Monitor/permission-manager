@@ -907,6 +907,8 @@
                 "/curriculum-enrollment-catalog",
                 "/curriculum-course-groups",
                 "/tutor-assignments.js",
+                "/curriculum-individual-student-matrix",
+                "/assign-curriculum-individual-subject",
                 "/set-curriculum-subject-type",
                 "/assign-grade-curriculum",
                 "/assign-individual-grade-teacher",
