@@ -430,6 +430,21 @@ class CurriculumPermissionTest {
     }
 
     @Test
+    void teacherDashboardNavigationUsesDefaultTeacherAccessWithoutRoleGrants() {
+        Map<String, Object> teacherCompat = ((List<Map<String, Object>>) configUnchecked().get("flat")).stream()
+            .filter(p -> "core_teacher_compat".equals(p.get("name"))).findFirst().orElseThrow();
+
+        assertEquals("teacher", teacherCompat.get("default"));
+        assertEquals(List.of("teacher"), defaultsForPath("/teacher-dashboard-navigation.js"));
+        assertAccess(teacher, "/teacher-dashboard-navigation.js", true);
+        assertAccess(admin, "/teacher-dashboard-navigation.js", true);
+        assertAccess(student, "/teacher-dashboard-navigation.js", false);
+        assertAccess(User.ANONYMOUS, "/teacher-dashboard-navigation.js", false);
+        assertContextAccess(teacher, "/weekly-conversations.js", RequestType.GET, true);
+        assertAccess(teacher, "/attendance.js", true);
+    }
+
+    @Test
     void contextDefaultsMatchBackendRolesWithoutTeacherOrAnonymousGrants() {
         for(User user:List.of(student,teacher,admin,User.ANONYMOUS)) {
             CONTEXT_ROUTES.forEach((name,paths)->{
@@ -683,6 +698,15 @@ class CurriculumPermissionTest {
 
     private static List<String> effectiveNames(User user) {
         return Arrays.stream(UserEffect.get(user).getPermissions()).map(Permission::getName).toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> defaultsForPath(String path) {
+        return Stream.of("flat", "generics")
+            .flatMap(section -> ((List<Map<String, Object>>) configUnchecked().get(section)).stream())
+            .filter(permission -> ((List<String>) permission.get("paths")).contains(path))
+            .map(permission -> (String) permission.get("default"))
+            .toList();
     }
 
     private static void assertAccess(User user, String path, boolean allowed) {

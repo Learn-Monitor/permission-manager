@@ -86,6 +86,20 @@ class DefaultPermissionConfigTest {
     }
 
     @Test
+    void teacherDashboardNavigationUsesGenericTeacherCompatibility() throws IOException {
+        List<Map<String, Object>> permissions = allPermissions(config());
+        Map<String, Object> teacherCompat = permissionByName(permissions, "core_teacher_compat");
+        Map<String, Object> tutorContext = permissionByName(permissions, "curriculum_tutor_context");
+
+        assertEquals("teacher", teacherCompat.get("default"));
+        assertTrue(paths(teacherCompat).contains("/teacher-dashboard-navigation.js"));
+        assertEquals(List.of("teacher"), defaultsForPath(permissions, "/teacher-dashboard-navigation.js"));
+        assertFalse(paths(tutorContext).contains("/teacher-dashboard-navigation.js"));
+        assertEquals(List.of("curriculum_tutor_context"), ownersForPath(permissions, "/weekly-conversations.js"));
+        assertEquals(1, ownersForPath(permissions, "/teacher-dashboard-navigation.js").size());
+    }
+
+    @Test
     void tutorAssignmentsScriptIsAnExplicitStandardFile() throws IOException {
         List<Map<String, Object>> permissions = allPermissions(config());
         Map<String, Object> enrollment = permissionByName(permissions, "curriculum_manage_enrollment");
@@ -189,6 +203,13 @@ class DefaultPermissionConfigTest {
         return permissions.stream()
             .filter(permission -> ((List<String>) permission.get("paths")).contains(path))
             .map(permission -> (String) permission.get("default"))
+            .toList();
+    }
+
+    private static List<String> ownersForPath(List<Map<String, Object>> permissions, String path) {
+        return permissions.stream()
+            .filter(permission -> ((List<String>) permission.get("paths")).contains(path))
+            .map(permission -> (String) permission.get("name"))
             .toList();
     }
 
