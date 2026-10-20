@@ -139,6 +139,8 @@
                 "/flexible-tasks",
                 "/curriculum-progress",
                 "/curriculum-teacher-roster",
+                "/curriculum-learning-group-sheet",
+                "/curriculum-nansteine",
                 "/get-permissions",
                 "/flexible-curriculum-structure",
                 "/curriculum-student-progress-detail",
@@ -173,6 +175,21 @@
             "description": "Allows completing flexible tasks; backend ownership and student context still apply.",
             "paths": [
                 "/complete-flexible-task"
+            ],
+            "post_restrictions": [],
+            "depends": [
+                "curriculum_view"
+            ],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "curriculum_manage_nansteine",
+            "description": "Allows teachers to create, assign and complete individual Nanstein tasks in their authorized teaching context.",
+            "paths": [
+                "/add-nanstein",
+                "/assign-nanstein",
+                "/complete-nanstein"
             ],
             "post_restrictions": [],
             "depends": [
