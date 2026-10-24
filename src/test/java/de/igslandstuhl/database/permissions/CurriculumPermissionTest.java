@@ -425,7 +425,7 @@ class CurriculumPermissionTest {
         Map<String, Object> tutor = ((List<Map<String, Object>>) configUnchecked().get("flat")).stream()
             .filter(p -> "curriculum_tutor_context".equals(p.get("name"))).findFirst().orElseThrow();
         assertEquals(List.of("/my-tutor-classes", "/curriculum-weekly-conversations",
-            "/change-tutor-graduation", "/weekly-conversations.js"), tutor.get("paths"));
+            "/change-tutor-graduation", "/ranking-top50", "/weekly-conversations.js"), tutor.get("paths"));
         assertEquals(List.of("GET", "POST"), tutor.get("allowed_methods"));
         assertFalse(((List<String>) tutor.get("paths")).contains("*"));
         assertEquals("teacher", tutor.get("default"));
