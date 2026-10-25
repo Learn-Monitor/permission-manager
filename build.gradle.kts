@@ -19,7 +19,12 @@ repositories {
     }
 }
 
+// DEV test default: use the sibling Core fat JAR when it exists, so the
+// Permission Manager suite receives the same SQLite/runtime API it tests.
+// CI/release builders may still provide -PstudentDatabaseJar explicitly.
+val localDevCoreFatJar = file("../student-database/build/libs/student-database-v2.0.0-fat.jar")
 val studentDatabaseJar = providers.gradleProperty("studentDatabaseJar").orNull
+    ?: localDevCoreFatJar.takeIf { it.isFile }?.absolutePath
 val studentDatabaseDependency = studentDatabaseJar?.let { files(it) }
 
 dependencies {
