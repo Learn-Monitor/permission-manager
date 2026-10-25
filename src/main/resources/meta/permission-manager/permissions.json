@@ -185,9 +185,12 @@
         },
         {
             "name": "curriculum_manage_nansteine",
-            "description": "Allows teachers to create, assign and complete individual Nanstein tasks in their authorized teaching context.",
+            "description": "Allows teachers to create, edit, assign, complete and delete individual Nanstein tasks in their authorized teaching context.",
             "paths": [
                 "/add-nanstein",
+                "/edit-nanstein",
+                "/nanstein-delete-preview",
+                "/delete-nanstein",
                 "/assign-nanstein",
                 "/complete-nanstein"
             ],

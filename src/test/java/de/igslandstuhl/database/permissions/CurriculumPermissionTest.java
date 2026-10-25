@@ -36,7 +36,7 @@ class CurriculumPermissionTest {
             "/curriculum-learning-group-sheet", "/curriculum-nansteine"),
         "curriculum_manage_flexible", List.of("/add-flexible-task", "/edit-flexible-task", "/add-flexible-topic", "/rename-flexible-topic", "/delete-flexible-task", "/delete-flexible-topic"),
         "curriculum_complete_flexible", List.of("/complete-flexible-task"),
-        "curriculum_manage_nansteine", List.of("/add-nanstein", "/assign-nanstein", "/complete-nanstein"),
+        "curriculum_manage_nansteine", List.of("/add-nanstein", "/edit-nanstein", "/nanstein-delete-preview", "/delete-nanstein", "/assign-nanstein", "/complete-nanstein"),
         "curriculum_manage_central", List.of("/add-curriculum-topic", "/rename-topic",
             "/add-curriculum-task", "/edit-task", "/central-curriculum-overview",
             "/preview-central-curriculum-import", "/import-central-curriculum"));
