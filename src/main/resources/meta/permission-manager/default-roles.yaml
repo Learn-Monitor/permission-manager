@@ -10,6 +10,7 @@ roles:
       - standard_files
       - view_class_data
       - view_student_data
+      - freistellung_teacher
 
   - name: admin
     description: "Administrator role with full permissions"
@@ -20,6 +21,8 @@ roles:
       - view_student_data
       - change_class_data
       - change_student_graduation
+      - freistellung_teacher
+      - freistellung_admin
 
   - name: student
     description: "Student role with limited permissions to view their own data"

@@ -990,6 +990,39 @@
                 "POST"
             ],
             "require_dependencies": true
+        },
+        {
+            "name": "freistellung_teacher",
+            "description": "Allows teachers to use the Freistellung workflow; server-side role checks remain authoritative.",
+            "paths": [
+                "/freistellung",
+                "/freistellung.css",
+                "/freistellung.js",
+                "/freistellung-bearbeitung",
+                "/freistellung-submit",
+                "/freistellung-data",
+                "/freistellung-role-info",
+                "/freistellung-orga",
+                "/freistellung-sl",
+                "/freistellung-delete",
+                "/freistellung-resend",
+                "/freistellung-withdraw",
+                "/freistellung-attachment"
+            ],
+            "post_restrictions": [],
+            "depends": ["standard_files"],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "freistellung_admin",
+            "description": "Allows administrators to assign Freistellung workflow roles.",
+            "paths": ["/freistellung-role"],
+            "post_restrictions": [],
+            "depends": ["standard_files"],
+            "default": "admin",
+            "allowed_methods": ["POST"],
+            "require_dependencies": true
         }
     ]
 }
