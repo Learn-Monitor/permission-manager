@@ -993,22 +993,8 @@
         },
         {
             "name": "freistellung_teacher",
-            "description": "Allows teachers to use the Freistellung workflow; server-side role checks remain authoritative.",
-            "paths": [
-                "/freistellung",
-                "/freistellung.css",
-                "/freistellung.js",
-                "/freistellung-bearbeitung",
-                "/freistellung-submit",
-                "/freistellung-data",
-                "/freistellung-role-info",
-                "/freistellung-orga",
-                "/freistellung-sl",
-                "/freistellung-delete",
-                "/freistellung-resend",
-                "/freistellung-withdraw",
-                "/freistellung-attachment"
-            ],
+            "description": "Retired compatibility permission; use the three explicit Freistellung rights below.",
+            "paths": [],
             "post_restrictions": [],
             "depends": ["standard_files"],
             "default": "teacher",
@@ -1016,12 +1002,51 @@
         },
         {
             "name": "freistellung_admin",
-            "description": "Allows administrators to assign Freistellung workflow roles.",
-            "paths": ["/freistellung-role"],
+            "description": "Retired compatibility permission; administration is covered by manage_permissions.",
+            "paths": [],
             "post_restrictions": [],
             "depends": ["standard_files"],
             "default": "admin",
             "allowed_methods": ["POST"],
+            "require_dependencies": true
+        },
+        {
+            "name": "freistellung_apply",
+            "description": "Darf Freistellungsanträge stellen und eigene Anträge sehen.",
+            "paths": [
+                "/freistellung", "/freistellung.css", "/freistellung.js",
+                "/freistellung-submit", "/freistellung-data", "/freistellung-role-info",
+                "/freistellung-withdraw", "/freistellung-attachment"
+            ],
+            "post_restrictions": [],
+            "depends": ["standard_files"],
+            "default": "teacher",
+            "require_dependencies": true
+        },
+        {
+            "name": "freistellung_orga",
+            "description": "Darf Freistellungsanträge als Orga-Leitung bearbeiten.",
+            "paths": [
+                "/freistellung-bearbeitung", "/freistellung.css", "/freistellung.js",
+                "/freistellung-data", "/freistellung-role-info", "/freistellung-orga",
+                "/freistellung-delete", "/freistellung-resend", "/freistellung-attachment"
+            ],
+            "post_restrictions": [],
+            "depends": ["standard_files", "freistellung_apply"],
+            "default": "none",
+            "require_dependencies": true
+        },
+        {
+            "name": "freistellung_sl",
+            "description": "Darf Freistellungsanträge als Schulleitung bearbeiten.",
+            "paths": [
+                "/freistellung-bearbeitung", "/freistellung.css", "/freistellung.js",
+                "/freistellung-data", "/freistellung-role-info", "/freistellung-sl",
+                "/freistellung-delete", "/freistellung-resend", "/freistellung-attachment"
+            ],
+            "post_restrictions": [],
+            "depends": ["standard_files", "freistellung_apply"],
+            "default": "none",
             "require_dependencies": true
         }
     ]

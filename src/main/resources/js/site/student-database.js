@@ -133,6 +133,7 @@ function loadRoleSection(role, permissions, users) {
 
         const permission_selects = Array.from(body.getElementsByClassName('permission-select'));
         permissions.forEach((p) => {
+            if (['freistellung_apply', 'freistellung_orga', 'freistellung_sl'].includes(p.name)) return;
             const perm_option = document.createElement('option');
             perm_option.textContent = p.name;
             perm_option.setAttribute('title', p.description);
@@ -164,6 +165,42 @@ function loadRoleSection(role, permissions, users) {
         body.querySelectorAll('.dlcontainer').forEach(registerDualListHandlers);
     })
 }
+async function loadFreistellungRights(rolesContainer) {
+    const rights = await post('/get-freistellung-rights', {});
+    const section = document.createElement('section');
+    section.className = 'freistellung-rights';
+    section.append(createTextElement('h2', 'Freistellungsrechte'));
+    section.append(createTextElement('p', 'Bearbeitungsfunktion: genau eine Auswahl. Orga-Leitung und Schulleitung schließen sich aus; beide Bearbeitungsrechte enthalten automatisch das Antragsrecht.'));
+    const table = document.createElement('table');
+    const head = document.createElement('tr');
+    ['Konto', 'Anträge stellen', 'Bearbeitungsfunktion'].forEach(text => head.append(createTextElement('th', text)));
+    table.append(head);
+    (rights || []).forEach(item => {
+        const row = document.createElement('tr');
+        row.append(createTextElement('td', item.username));
+        const applyCell = document.createElement('td');
+        const apply = document.createElement('input');
+        apply.type = 'checkbox'; apply.checked = !!item.apply; apply.setAttribute('aria-label', `${item.username}: Anträge stellen`);
+        apply.addEventListener('change', async () => {
+            if (item.orga || item.sl) { apply.checked = true; return; }
+            await post('/set-freistellung-right', { user: item.username, right: apply.checked ? 'apply' : 'none' });
+        });
+        applyCell.append(apply); row.append(applyCell);
+        const functionCell = document.createElement('td');
+        [['none', 'keine'], ['orga', 'Orga-Leitung'], ['sl', 'Schulleitung']].forEach(([value, label]) => {
+            const radio = document.createElement('input'); radio.type = 'radio'; radio.name = `freistellung-${item.username}`; radio.value = value;
+            radio.checked = value === (item.orga ? 'orga' : item.sl ? 'sl' : 'none');
+            radio.addEventListener('change', async () => {
+                const response = await post('/set-freistellung-right', { user: item.username, right: value });
+                if (!response.ok) { await loadFreistellungRights(rolesContainer); }
+                else { apply.checked = value !== 'none'; }
+            });
+            const labelNode = document.createElement('label'); labelNode.append(radio, document.createTextNode(` ${label} `)); functionCell.append(labelNode);
+        });
+        row.append(functionCell); table.append(row);
+    });
+    section.append(table); rolesContainer.prepend(section);
+}
 async function loadRolesView(rolesContainer) {
     const roles = fetchRoles();
     const permissions = fetchPermissions();
@@ -173,6 +210,7 @@ async function loadRolesView(rolesContainer) {
         role_panels[role.name] = roleSection;
         rolesContainer.appendChild(roleSection);
     });
+    try { await loadFreistellungRights(rolesContainer); } catch (error) { console.error('Failed to load Freistellung rights', error); }
 }
 
 function initializePermissionManager() {

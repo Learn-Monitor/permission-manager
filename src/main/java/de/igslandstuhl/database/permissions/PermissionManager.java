@@ -3,6 +3,7 @@ package de.igslandstuhl.database.permissions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
@@ -27,6 +28,8 @@ public class PermissionManager extends Plugin {
     private final Registry<String, Permission> permissionRegistry = new Registry<>();
     private final Registry<Permission, PermissionEffect> permissionEffectRegistry = new Registry<>();
     private final Map<String, Role> roles = new HashMap<>();
+    private static final Set<String> FREISTELLUNG_PROCESSING = Set.of("freistellung_orga", "freistellung_sl");
+    private static final String FREISTELLUNG_APPLY = "freistellung_apply";
 
     public PermissionManager() {
         instance = this;
@@ -126,6 +129,9 @@ public class PermissionManager extends Plugin {
             Permission permission = Permission.getByName(rq.getString("permission"));
 
             if (user != null && permission != null) {
+                if (isFreistellung(permission.getName())) {
+                    return toggleFreistellung(user, permission, rq);
+                }
                 PermissionNode.getPermissionNode(user.getUsername(), permission).toggleActive();
                 UserEffect.registerAll();
                 return PostResponse.ok("Successfully toggled permission for user " + user.getUsername(), ContentType.TEXT_PLAIN, rq);
@@ -150,12 +156,47 @@ public class PermissionManager extends Plugin {
             Role role = Role.getByName(rq.getString("role"));
 
             if (permission != null && role != null) {
+                if (isFreistellung(permission.getName()) && !toggleRoleFreistellung(role, permission)) {
+                    return PostResponse.badRequest("Freistellungsrechte: Antrag, Orga-Leitung und Schulleitung müssen konsistent bleiben", rq);
+                }
                 role.togglePermission(permission);
                 UserEffect.registerAll();
                 return PostResponse.ok("Successfully toggled permission for role " + role.getName(), ContentType.TEXT_PLAIN, rq);
             } else {
                 return PostResponse.badRequest("Permission or role does not exist", rq);
             }
+        });
+        HttpHandler.registerPostRequestHandler("/get-freistellung-rights", AccessLevel.ADMIN, (rq) -> {
+            var users = User.getAllUsers().stream().map(user -> {
+                Permission apply = Permission.getByName(FREISTELLUNG_APPLY);
+                Permission orga = Permission.getByName("freistellung_orga");
+                Permission sl = Permission.getByName("freistellung_sl");
+                return Map.of(
+                    "username", user.getUsername(),
+                    "apply", PermissionNode.getPermissionNode(user.getUsername(), apply).isActive(),
+                    "orga", PermissionNode.getPermissionNode(user.getUsername(), orga).isActive(),
+                    "sl", PermissionNode.getPermissionNode(user.getUsername(), sl).isActive()
+                );
+            }).toList();
+            return PostResponse.json(users, rq);
+        });
+        HttpHandler.registerPostRequestHandler("/set-freistellung-right", AccessLevel.ADMIN, (rq) -> {
+            User user = User.getUser(rq.getString("user"));
+            String right = rq.getString("right");
+            if (user == null || right == null || !Set.of("none", "apply", "orga", "sl").contains(right)) {
+                return PostResponse.badRequest("Konto oder Freistellungsrecht ungültig", rq);
+            }
+            Permission apply = Permission.getByName(FREISTELLUNG_APPLY);
+            Permission orga = Permission.getByName("freistellung_orga");
+            Permission sl = Permission.getByName("freistellung_sl");
+            PermissionNode applyNode = PermissionNode.getPermissionNode(user.getUsername(), apply);
+            PermissionNode orgaNode = PermissionNode.getPermissionNode(user.getUsername(), orga);
+            PermissionNode slNode = PermissionNode.getPermissionNode(user.getUsername(), sl);
+            applyNode.setActive(right.equals("apply") || right.equals("orga") || right.equals("sl"));
+            orgaNode.setActive(right.equals("orga"));
+            slNode.setActive(right.equals("sl"));
+            UserEffect.registerAll();
+            return PostResponse.ok("Freistellungsrecht gespeichert", ContentType.TEXT_PLAIN, rq);
         });
         HttpHandler.registerPostRequestHandler("/get-role", AccessLevel.ADMIN, (rq) -> {
             Role role = Role.getByName(rq.getString("role"));
@@ -212,5 +253,40 @@ public class PermissionManager extends Plugin {
         getLogger().info("Adding access listener...");
         AccessListener.getInstance().register();
         getLogger().info("permission-manager successfully loaded.");
+    }
+
+    private static boolean isFreistellung(String name) {
+        return FREISTELLUNG_APPLY.equals(name) || FREISTELLUNG_PROCESSING.contains(name);
+    }
+
+    private static PostResponse toggleFreistellung(User user, Permission permission, de.igslandstuhl.database.server.webserver.requests.APIPostRequest rq) {
+        PermissionNode node = PermissionNode.getPermissionNode(user.getUsername(), permission);
+        boolean next = !node.isActive();
+        Permission apply = Permission.getByName(FREISTELLUNG_APPLY);
+        Permission orga = Permission.getByName("freistellung_orga");
+        Permission sl = Permission.getByName("freistellung_sl");
+        if (next && "freistellung_orga".equals(permission.getName()) && PermissionNode.getPermissionNode(user.getUsername(), sl).isActive())
+            return PostResponse.badRequest("Orga-Leitung und Schulleitung schließen sich aus", rq);
+        if (next && "freistellung_sl".equals(permission.getName()) && PermissionNode.getPermissionNode(user.getUsername(), orga).isActive())
+            return PostResponse.badRequest("Orga-Leitung und Schulleitung schließen sich aus", rq);
+        if (!next && FREISTELLUNG_APPLY.equals(permission.getName()) &&
+            (PermissionNode.getPermissionNode(user.getUsername(), orga).isActive() || PermissionNode.getPermissionNode(user.getUsername(), sl).isActive()))
+            return PostResponse.badRequest("Das Antragsrecht ist für die Bearbeitungsfunktion erforderlich", rq);
+        node.setActive(next);
+        UserEffect.registerAll();
+        return PostResponse.ok("Freistellungsrecht gespeichert", ContentType.TEXT_PLAIN, rq);
+    }
+
+    private static boolean toggleRoleFreistellung(Role role, Permission permission) {
+        boolean enabled = role.getPermissions().stream().anyMatch(p -> p.getName().equals(permission.getName()));
+        if (!enabled && FREISTELLUNG_PROCESSING.contains(permission.getName())) {
+            String other = "freistellung_orga".equals(permission.getName()) ? "freistellung_sl" : "freistellung_orga";
+            if (role.getPermissions().stream().anyMatch(p -> p.getName().equals(other))) return false;
+        }
+        if (enabled && FREISTELLUNG_APPLY.equals(permission.getName()) && role.getPermissions().stream().anyMatch(p -> FREISTELLUNG_PROCESSING.contains(p.getName()))) return false;
+        if (!enabled && FREISTELLUNG_PROCESSING.contains(permission.getName()) && role.getPermissions().stream().noneMatch(p -> p.getName().equals(FREISTELLUNG_APPLY))) {
+            role.addPermission(Permission.getByName(FREISTELLUNG_APPLY));
+        }
+        return true;
     }
 }
