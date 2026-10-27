@@ -1048,6 +1048,16 @@
             "depends": ["standard_files", "freistellung_apply"],
             "default": "none",
             "require_dependencies": true
+        },
+        {
+            "name": "freistellung_mail_admin",
+            "description": "Darf die technische Freistellungs-Mailverwaltung bedienen; nur für ausdrücklich berechtigte Administratoren.",
+            "paths": ["/freistellung-mail-admin", "/freistellung-mail-admin.js", "/freistellung-mail-admin-data", "/freistellung-mail-profile", "/freistellung-mail-test"],
+            "post_restrictions": [],
+            "depends": ["standard_files"],
+            "default": "none",
+            "allowed_methods": ["GET", "POST"],
+            "require_dependencies": true
         }
     ]
 }

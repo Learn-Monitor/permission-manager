@@ -3,5 +3,10 @@
         "type": "ADMIN_DASHBOARD",
         "path": "/manage_permissions",
         "label": "Zugriffsrechte verwalten"
+    },
+    {
+        "type": "ADMIN_DASHBOARD",
+        "path": "/freistellung-mail-admin",
+        "label": "Freistellung – Mailverwaltung"
     }
 ]
