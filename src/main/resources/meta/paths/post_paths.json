@@ -46,5 +46,23 @@
         "handler_type": "PostRequestHandler",
         "namespaces": [],
         "access_level": "admin"
+    },
+    "/get-freistellung-rights": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
+    },
+    "/set-admin-role": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
+    },
+    "/set-freistellung-right": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
     }
 }

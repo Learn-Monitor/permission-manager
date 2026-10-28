@@ -432,7 +432,10 @@
                 "/get-permission-node",
                 "/get-role-node",
                 "/add-role",
-                "/delete-role"
+                "/delete-role",
+                "/get-freistellung-rights",
+                "/set-admin-role",
+                "/set-freistellung-right"
             ],
             "post_restrictions": [],
             "depends": [
@@ -1055,7 +1058,7 @@
             "paths": ["/freistellung-mail-admin", "/freistellung-mail-admin.js", "/freistellung-mail-admin-data", "/freistellung-mail-profile", "/freistellung-mail-test"],
             "post_restrictions": [],
             "depends": ["standard_files"],
-            "default": "none",
+            "default": "admin",
             "allowed_methods": ["GET", "POST"],
             "require_dependencies": true
         }
