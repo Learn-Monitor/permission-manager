@@ -27,6 +27,12 @@ public class AccessListener extends EventListener<AccessManagerEvent> {
         User currentUser = Server.getInstance().getWebServer().getSessionManager().getSessionUser(event.getRequest());
         if (currentUser == null) currentUser = User.ANONYMOUS;
         UserEffect effect = UserEffect.get(currentUser);
+        if (effect == null) {
+            event.changeAccessState(currentUser == User.ANONYMOUS
+                    ? de.igslandstuhl.database.server.webserver.access.AccessState.UNAUTHORIZED
+                    : de.igslandstuhl.database.server.webserver.access.AccessState.RESTRICTED);
+            return;
+        }
         event.changeAccessState(effect.testAccess(event.getRequest().getPath(), event.getRequest()));
     }
     
