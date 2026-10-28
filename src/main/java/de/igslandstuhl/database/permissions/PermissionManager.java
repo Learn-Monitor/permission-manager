@@ -194,6 +194,10 @@ public class PermissionManager extends Plugin {
                 Admin admin = Admin.get(teacher.getUsername());
                 if (admin != null) admin.delete();
             }
+            // The teacher object is the session identity for dual accounts. Rebuild its
+            // effect immediately so the mode selected in the same running process sees the
+            // changed admin role without a restart or re-login.
+            UserEffect.registerAll();
             return PostResponse.ok("Organisationsrolle gespeichert", ContentType.TEXT_PLAIN, rq);
         });
         HttpHandler.registerPostRequestHandler("/set-freistellung-right", AccessLevel.ADMIN, (rq) -> {

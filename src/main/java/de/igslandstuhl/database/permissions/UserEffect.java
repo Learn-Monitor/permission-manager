@@ -70,39 +70,50 @@ public class UserEffect {
         // snapshot avoids rescanning the registry once per user and preserves lookup order.
         Permission[] allPermissions = Permission.getAll().toArray(new Permission[0]);
         User.getAllUsers().forEach((u) -> {
-            Permission[] activePermissions;
-            if (u == User.ANONYMOUS) {
-                activePermissions = Arrays.stream(allPermissions)
+            registerUser(u, allPermissions);
+        });
+    }
+
+    /** Builds one effect from the same persisted permission and role sources as registerAll(). */
+    private static void registerUser(User user, Permission[] allPermissions) {
+        Permission[] activePermissions;
+        if (user == User.ANONYMOUS) {
+            activePermissions = Arrays.stream(allPermissions)
                 .map(PermissionManager.getInstance().permissionEffectRegistry()::get)
                 .filter(Objects::nonNull)
                 .filter((e) -> e.defaultLevel() == AccessLevel.PUBLIC)
                 .map((e) -> e.permission())
                 .toArray((a) -> new Permission[a]);
-            } else {
-                // Get permissions directly assigned to the user
-                Set<Permission> permissions = new LinkedHashSet<>(
-                    Arrays.stream(allPermissions)
-                        // Retired definitions can remain in existing databases. They have
-                        // no current effect and must not create default nodes for new users.
-                        .filter(p -> PermissionManager.getInstance().permissionEffectRegistry().get(p) != null)
-                        .filter((p) -> PermissionNode.getPermissionNode(u.getUsername(), p).isActive())
-                        .toList()
-                );
-                
-                // Get permissions from active roles
-                RoleNode.getUserRoles(u.getUsername()).stream()
-                    .filter((r) -> RoleNode.getRoleNode(u.getUsername(), r).isActive())
-                    .flatMap((r) -> r.getPermissions().stream())
-                    .forEach(permissions::add);
-                
-                activePermissions = permissions.toArray(new Permission[0]);
-            }
-            new UserEffect(u, activePermissions).register();
-        });
+        } else {
+            Set<Permission> permissions = new LinkedHashSet<>(
+                Arrays.stream(allPermissions)
+                    .filter(p -> PermissionManager.getInstance().permissionEffectRegistry().get(p) != null)
+                    .filter((p) -> PermissionNode.getPermissionNode(user.getUsername(), p).isActive())
+                    .toList()
+            );
+            RoleNode.getUserRoles(user.getUsername()).stream()
+                .filter((r) -> RoleNode.getRoleNode(user.getUsername(), r).isActive())
+                .flatMap((r) -> r.getPermissions().stream())
+                .forEach(permissions::add);
+            activePermissions = permissions.toArray(new Permission[0]);
+        }
+        new UserEffect(user, activePermissions).register();
     }
+
     public static UserEffect get(User user) {
         if (user == null) user = User.ANONYMOUS;
-        return registry.get(user);
+        UserEffect effect = registry.get(user);
+        if (effect == null && user != User.ANONYMOUS) {
+            // Users created after plugin startup are not part of the initial rebuild.
+            // Materialize only this authenticated user from the canonical persisted sources;
+            // an absent/unknown user still resolves to ANONYMOUS and remains fail-closed.
+            User persistedUser = User.getUser(user.getUsername());
+            if (persistedUser == null) return null;
+            PermissionNode.loadSnapshot();
+            registerUser(persistedUser, Permission.getAll().toArray(new Permission[0]));
+            effect = registry.get(persistedUser);
+        }
+        return effect;
     }
 
     static void invalidateUsername(String username) {
