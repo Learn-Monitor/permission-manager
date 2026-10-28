@@ -9,6 +9,8 @@ import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.SchoolClass;
 import de.igslandstuhl.database.api.Subject;
 import de.igslandstuhl.database.api.User;
+import de.igslandstuhl.database.api.Admin;
+import de.igslandstuhl.database.api.Teacher;
 import de.igslandstuhl.database.server.resources.ResourceLocation;
 import de.igslandstuhl.database.server.webserver.ContentType;
 import de.igslandstuhl.database.server.webserver.access.AccessLevel;
@@ -167,18 +169,32 @@ public class PermissionManager extends Plugin {
             }
         });
         HttpHandler.registerPostRequestHandler("/get-freistellung-rights", AccessLevel.ADMIN, (rq) -> {
-            var users = User.getAllUsers().stream().map(user -> {
+            var users = User.getAllUsers().stream().filter(user -> user != User.ANONYMOUS).collect(java.util.stream.Collectors.toMap(User::getUsername, user -> user, (first, second) -> second.isTeacher() ? second : first)).values().stream().map(user -> {
                 Permission apply = Permission.getByName(FREISTELLUNG_APPLY);
                 Permission orga = Permission.getByName("freistellung_orga");
                 Permission sl = Permission.getByName("freistellung_sl");
                 return Map.of(
                     "username", user.getUsername(),
+                    "teacher", user.isTeacher(),
+                    "admin", user.isAdmin(),
                     "apply", PermissionNode.getPermissionNode(user.getUsername(), apply).isActive(),
                     "orga", PermissionNode.getPermissionNode(user.getUsername(), orga).isActive(),
                     "sl", PermissionNode.getPermissionNode(user.getUsername(), sl).isActive()
                 );
             }).toList();
             return PostResponse.json(users, rq);
+        });
+        HttpHandler.registerPostRequestHandler("/set-admin-role", AccessLevel.ADMIN, (rq) -> {
+            User user = User.getUser(rq.getString("user"));
+            boolean enabled = rq.getBoolean("enabled");
+            if (!(user instanceof Teacher teacher)) return PostResponse.badRequest("Nur Lehrkräfte können die Admin-Rolle erhalten", rq);
+            if (enabled) {
+                if (!teacher.isAdmin()) Admin.createWithPasswordHash(teacher.getUsername(), teacher.getPasswordHash());
+            } else {
+                Admin admin = Admin.get(teacher.getUsername());
+                if (admin != null) admin.delete();
+            }
+            return PostResponse.ok("Organisationsrolle gespeichert", ContentType.TEXT_PLAIN, rq);
         });
         HttpHandler.registerPostRequestHandler("/set-freistellung-right", AccessLevel.ADMIN, (rq) -> {
             User user = User.getUser(rq.getString("user"));

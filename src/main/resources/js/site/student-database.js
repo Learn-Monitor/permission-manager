@@ -170,14 +170,22 @@ async function loadFreistellungRights(rolesContainer) {
     const section = document.createElement('section');
     section.className = 'freistellung-rights';
     section.append(createTextElement('h2', 'Freistellungsrechte'));
-    section.append(createTextElement('p', 'Bearbeitungsfunktion: genau eine Auswahl. Orga-Leitung und Schulleitung schließen sich aus; beide Bearbeitungsrechte enthalten automatisch das Antragsrecht.'));
+    section.append(createTextElement('p', 'Lehrkraft ist fest. Admin, Orga-Leitung und Schulleitung sind zusätzliche Organisationsrollen; Orga-Leitung und Schulleitung schließen sich aus.'));
     const table = document.createElement('table');
     const head = document.createElement('tr');
-    ['Konto', 'Anträge stellen', 'Bearbeitungsfunktion'].forEach(text => head.append(createTextElement('th', text)));
+    ['Konto', 'Grundrolle', 'Admin', 'Anträge stellen', 'Bearbeitungsfunktion'].forEach(text => head.append(createTextElement('th', text)));
     table.append(head);
     (rights || []).forEach(item => {
         const row = document.createElement('tr');
         row.append(createTextElement('td', item.username));
+        row.append(createTextElement('td', item.teacher ? 'Lehrkraft fest' : 'Schüler'));
+        const adminCell = document.createElement('td');
+        if (item.teacher) {
+            const admin = document.createElement('input'); admin.type = 'checkbox'; admin.checked = !!item.admin; admin.setAttribute('aria-label', `${item.username}: Admin`);
+            admin.addEventListener('change', async () => { const response = await post('/set-admin-role', {user: item.username, enabled: admin.checked}); if (!response.ok) admin.checked = !admin.checked; });
+            adminCell.append(admin);
+        } else adminCell.textContent = '—';
+        row.append(adminCell);
         const applyCell = document.createElement('td');
         const apply = document.createElement('input');
         apply.type = 'checkbox'; apply.checked = !!item.apply; apply.setAttribute('aria-label', `${item.username}: Anträge stellen`);
