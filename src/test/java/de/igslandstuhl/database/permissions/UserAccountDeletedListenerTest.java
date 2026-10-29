@@ -36,8 +36,10 @@ class UserAccountDeletedListenerTest {
         when(deletedUser.getUsername()).thenReturn(deleted);
         when(otherUser.getUsername()).thenReturn(other);
         PermissionManager manager = mock(PermissionManager.class);
-        try (var managerStatic = mockStatic(PermissionManager.class)) {
+        try (var managerStatic = mockStatic(PermissionManager.class);
+             var userStatic = mockStatic(User.class)) {
             managerStatic.when(PermissionManager::getInstance).thenReturn(manager);
+            userStatic.when(() -> User.getUser(other)).thenReturn(otherUser);
             when(manager.permissionEffectRegistry()).thenReturn(new de.igslandstuhl.database.Registry<>());
             new UserEffect(deletedUser, new Permission[0]).register();
             new UserEffect(otherUser, new Permission[0]).register();

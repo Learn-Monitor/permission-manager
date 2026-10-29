@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.server.Server;
 import de.igslandstuhl.database.server.sql.SQLHelper;
@@ -44,23 +43,33 @@ public class RoleNode {
         return active;
     }
 
+    /** Read a role assignment without creating a node or modifying caches. */
+    static boolean readActive(String username, Role role) {
+        try {
+            Boolean value = Server.getInstance().processSingleRequest(fields -> PermissionNode.parseActive(fields[0]),
+                "is_active_role_node", new String[] {"active"}, username, role.getName());
+            return Boolean.TRUE.equals(value);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read role assignment", e);
+        }
+    }
+
     public void setActive(boolean active) {
+        boolean previous = this.active;
         this.active = active;
-        persistToDatabase();
+        try {
+            insertIntoDatabase();
+            invalidateUsername(username);
+            cache.add(this);
+            index.put(new CacheKey(username, role.getName()), this);
+        } catch (RuntimeException e) {
+            this.active = previous;
+            throw e;
+        }
     }
 
     public void toggleActive() {
         setActive(!active);
-    }
-
-    private void persistToDatabase() {
-        try {
-            Server.getInstance().getConnection().executeVoidProcessSecure(
-                SQLHelper.getUpdateObjectProcess("user_role", new String[]{String.valueOf(active), username, role.getName()})
-            );
-        } catch (SQLException e) {
-            PermissionManager.getInstance().getLogger().error("Failed to persist RoleNode for user \"{}\" and role \"{}\" to database", username, role.getName(), e);
-        }
     }
 
     private void insertIntoDatabase() {
@@ -69,7 +78,7 @@ public class RoleNode {
                 SQLHelper.getAddObjectProcess("user_role", username, role.getName(), String.valueOf(active))
             );
         } catch (SQLException e) {
-            PermissionManager.getInstance().getLogger().error("Failed to insert RoleNode for user \"{}\" and role \"{}\" to database", username, role.getName(), e);
+            throw new IllegalStateException("Failed to persist role assignment", e);
         }
     }
 
@@ -79,27 +88,7 @@ public class RoleNode {
         RoleNode node = index.get(key);
         if (node != null) return node;
 
-        AtomicReference<RoleNode> nodeRef = new AtomicReference<>();
-        try {
-            Server.getInstance().processRequest(
-                fields -> {
-                    boolean active = Boolean.parseBoolean(fields[0]);
-                    nodeRef.set(new RoleNode(role, username, active));
-                },
-                "is_active_role_node",
-                new String[] {"active"},
-                username,
-                role.getName())
-            ;
-        } catch (SQLException e) {
-            PermissionManager.getInstance().getLogger().error("Failed to retrieve Role assignment from database", e);
-        }
-        node = nodeRef.get();
-
-        if (node == null) {
-            node = new RoleNode(role, username, false);
-            node.insertIntoDatabase();
-        }
+        node = new RoleNode(role, username, readActive(username, role));
         cache.add(node);
         index.put(key, node);
         return node;

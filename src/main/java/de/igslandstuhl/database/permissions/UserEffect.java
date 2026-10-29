@@ -13,10 +13,13 @@ import de.igslandstuhl.database.server.webserver.requests.HttpRequest;
 
 public class UserEffect {
     private static final Registry<User, UserEffect> registry = new Registry<>();
+    private static final Object MUTATION_LOCK = new Object();
+    static Object mutationLock() { return MUTATION_LOCK; }
 
     private final User user;
     
     private final PermissionEffect[] effects;
+    private final boolean freistellungSecurityConflict;
 
     public UserEffect(User user, Permission[] permissions) {
         this.user = user;
@@ -38,6 +41,25 @@ public class UserEffect {
                 }
             }
         } while (changed);
+        // A historical or otherwise inconsistent union must never authorize
+        // either processing function. Keep the independent application right.
+        freistellungSecurityConflict = resolved.stream().anyMatch(p -> "freistellung_orga".equals(p.getName()))
+            && resolved.stream().anyMatch(p -> "freistellung_sl".equals(p.getName()));
+        if (freistellungSecurityConflict) {
+            pending.removeIf(e -> "freistellung_orga".equals(e.permission().getName())
+                || "freistellung_sl".equals(e.permission().getName()));
+            resolved.clear();
+            do {
+                changed = false;
+                for (PermissionEffect effect : pending) {
+                    if (!resolved.contains(effect.permission()) &&
+                        (!effect.requireDependencies() ||
+                         Arrays.stream(effect.depends()).allMatch(resolved::contains))) {
+                        changed |= resolved.add(effect.permission());
+                    }
+                }
+            } while (changed);
+        }
         // Missing prerequisites and cycles fail closed, without creating or activating nodes.
         effects = pending.stream().filter(e -> resolved.contains(e.permission()))
             .toArray(PermissionEffect[]::new);
@@ -60,18 +82,28 @@ public class UserEffect {
             .toArray(Permission[]::new);
     }
 
+    public boolean hasFreistellungSecurityConflict() { return freistellungSecurityConflict; }
+
     public void register() {
-        registry.register(user, this);
+        synchronized (MUTATION_LOCK) {
+            synchronized (UserEffect.class) { registry.register(user, this); }
+        }
     }
 
     public static void registerAll() {
-        PermissionNode.loadSnapshot();
-        // Permission metadata is immutable for the duration of this rebuild. Reusing the
-        // snapshot avoids rescanning the registry once per user and preserves lookup order.
-        Permission[] allPermissions = Permission.getAll().toArray(new Permission[0]);
-        User.getAllUsers().forEach((u) -> {
-            registerUser(u, allPermissions);
-        });
+        synchronized (MUTATION_LOCK) {
+            synchronized (UserEffect.class) {
+                try {
+                    PermissionNode.loadSnapshot();
+                    Permission[] allPermissions = Permission.getAll().toArray(new Permission[0]);
+                    User.getAllUsers().forEach((u) -> registerUser(u, allPermissions));
+                } catch (RuntimeException failure) {
+                    // Do not retain any old effect if a revocation rebuild fails.
+                    registry.close();
+                    throw failure;
+                }
+            }
+        }
     }
 
     /** Builds one effect from the same persisted permission and role sources as registerAll(). */
@@ -88,7 +120,7 @@ public class UserEffect {
             Set<Permission> permissions = new LinkedHashSet<>(
                 Arrays.stream(allPermissions)
                     .filter(p -> PermissionManager.getInstance().permissionEffectRegistry().get(p) != null)
-                    .filter((p) -> PermissionNode.getPermissionNode(user.getUsername(), p).isActive())
+                    .filter((p) -> PermissionNode.getPermissionNode(user.getUsername(), p).isActive(user))
                     .toList()
             );
             RoleNode.getUserRoles(user.getUsername()).stream()
@@ -101,22 +133,33 @@ public class UserEffect {
     }
 
     public static UserEffect get(User user) {
-        if (user == null) user = User.ANONYMOUS;
-        UserEffect effect = registry.get(user);
-        if (effect == null && user != User.ANONYMOUS) {
-            // Users created after plugin startup are not part of the initial rebuild.
-            // Materialize only this authenticated user from the canonical persisted sources;
-            // an absent/unknown user still resolves to ANONYMOUS and remains fail-closed.
-            User persistedUser = User.getUser(user.getUsername());
-            if (persistedUser == null) return null;
-            PermissionNode.loadSnapshot();
-            registerUser(persistedUser, Permission.getAll().toArray(new Permission[0]));
-            effect = registry.get(persistedUser);
+        synchronized (MUTATION_LOCK) {
+            synchronized (UserEffect.class) {
+                try {
+                    if (user == null) user = User.ANONYMOUS;
+                    if (user == User.ANONYMOUS) return registry.get(user);
+                    User persistedUser = User.getUser(user.getUsername());
+                    if (persistedUser == null || persistedUser == User.ANONYMOUS) return null;
+                    UserEffect effect = registry.get(persistedUser);
+                    if (effect == null) {
+                        PermissionNode.loadSnapshot();
+                        registerUser(persistedUser, Permission.getAll().toArray(new Permission[0]));
+                        effect = registry.get(persistedUser);
+                    }
+                    return effect;
+                } catch (RuntimeException failure) {
+                    org.slf4j.LoggerFactory.getLogger(UserEffect.class).error("Permission effect lookup failed; access denied", failure);
+                    return null;
+                }
+            }
         }
-        return effect;
     }
 
     static void invalidateUsername(String username) {
-        registry.keyStream().filter(user -> username.equals(user.getUsername())).toList().forEach(registry::unregister);
+        synchronized (MUTATION_LOCK) {
+            synchronized (UserEffect.class) {
+                registry.keyStream().filter(user -> username.equals(user.getUsername())).toList().forEach(registry::unregister);
+            }
+        }
     }
 }

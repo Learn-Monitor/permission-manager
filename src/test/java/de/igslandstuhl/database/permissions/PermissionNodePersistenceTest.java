@@ -40,20 +40,22 @@ class PermissionNodePersistenceTest {
         permissions.register(permission.getName(), permission);
         when(manager.permissionRegistry()).thenReturn(permissions);
         Server server = mock(Server.class);
-        try (MockedStatic<PermissionManager> managerMock = mockStatic(PermissionManager.class);
+        SQLiteConnection connection = mock(SQLiteConnection.class);
+        try (Connection database = DriverManager.getConnection("jdbc:sqlite::memory:");
+             MockedStatic<PermissionManager> managerMock = mockStatic(PermissionManager.class);
              MockedStatic<Server> serverMock = mockStatic(Server.class)) {
+            database.createStatement().execute("CREATE TABLE permissions (name VARCHAR(255) PRIMARY KEY)");
+            database.createStatement().execute("INSERT INTO permissions (name) VALUES ('view_grades')");
+            database.createStatement().execute(resource("/sql/tables/permnodes.sql"));
+            database.createStatement().execute("INSERT INTO permnodes(permission,username,active) VALUES('view_grades','student','false')");
             managerMock.when(PermissionManager::getInstance).thenReturn(manager);
             serverMock.when(Server::getInstance).thenReturn(server);
-            doAnswer(call -> {
-                @SuppressWarnings("unchecked")
-                java.util.function.Consumer<String[]> callback = call.getArgument(0);
-                callback.accept(new String[] {"view_grades", "student", "false"});
-                return null;
-            }).when(server).processRequest(any(), eq("get_all_permission_nodes"), any(String[].class));
+            when(server.getConnection()).thenReturn(connection);
+            when(connection.getSQLConnection()).thenReturn(database);
 
             assertTrue(PermissionNode.loadSnapshot());
             assertFalse(PermissionNode.getPermissionNode("student", permission).isActive());
-            verify(server, never()).processRequest(any(), eq("is_active_node"), any(String[].class), any(String[].class));
+            verify(server, never()).processSingleRequest(any(), eq("is_active_node"), any(String[].class), any(String[].class));
         }
     }
 
@@ -96,6 +98,38 @@ class PermissionNodePersistenceTest {
             writeNode(connection, "view_grades", "student", true);
             assertTrue(readActive(connection, "view_grades", "student"));
         }
+    }
+
+    @Test
+    void snapshotFailureAndPerNodeFailureDenyInsteadOfGrantingDefaults() throws Exception {
+        Permission permission = new Permission("synthetic_admin_right", "Synthetic admin right");
+        PermissionManager manager = mock(PermissionManager.class);
+        when(manager.getLogger()).thenReturn(mock(org.slf4j.Logger.class));
+        Server server = mock(Server.class);
+        SQLiteConnection connection = mock(SQLiteConnection.class);
+        Connection database = mock(Connection.class);
+        when(server.getConnection()).thenReturn(connection);
+        when(connection.getSQLConnection()).thenReturn(database);
+        when(database.prepareStatement(anyString())).thenThrow(new SQLException("synthetic read failure"));
+        when(server.processSingleRequest(any(), eq("is_active_node"), any(String[].class), any(String[].class)))
+            .thenThrow(new SQLException("synthetic read failure"));
+        try (MockedStatic<PermissionManager> managerMock = mockStatic(PermissionManager.class);
+             MockedStatic<Server> serverMock = mockStatic(Server.class)) {
+            managerMock.when(PermissionManager::getInstance).thenReturn(manager);
+            serverMock.when(Server::getInstance).thenReturn(server);
+            assertFalse(PermissionNode.loadSnapshot());
+            assertFalse(PermissionNode.getPermissionNode("synthetic-user", permission).isActive());
+            verify(connection, never()).executeVoidProcessSecure(any(SQLVoidProcess.class));
+        }
+    }
+
+    @Test
+    void legacyNumericValuesDoNotSilentlyBecomeNewGrants() {
+        assertFalse(PermissionNode.parseActive("1"));
+        assertTrue(PermissionNode.parseActive("true"));
+        assertFalse(PermissionNode.parseActive("0"));
+        assertFalse(PermissionNode.parseActive("false"));
+        assertFalse(PermissionNode.parseActive("unexpected"));
     }
 
     private static void writeNode(Connection connection, String permission, String username, boolean active)

@@ -150,13 +150,20 @@ public class RolesYamlConfigLoader {
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
             Yaml yaml = new Yaml(options);
 
-            try (FileWriter writer = new FileWriter(configPath.toFile())) {
-                yaml.dump(config, writer);
+            Path temporary = Files.createTempFile(configDir, ".roles-", ".tmp");
+            try {
+                Files.writeString(temporary, yaml.dump(config));
+                if (Files.exists(configPath)) Files.setPosixFilePermissions(temporary, Files.getPosixFilePermissions(configPath));
+                Files.move(temporary, configPath, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temporary);
             }
 
             PermissionManager.getInstance().getLogger().info("Saved {} role(s) to {}", rolesList.size(), configPath);
         } catch (IOException e) {
             PermissionManager.getInstance().getLogger().error("Failed to save roles configuration to YAML", e);
+            throw new IllegalStateException("Failed to save roles configuration", e);
         }
     }
 

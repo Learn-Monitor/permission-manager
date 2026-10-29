@@ -49,6 +49,7 @@ class CurriculumPermissionTest {
     private Connection database;
     private PermissionManager manager;
     private ResourceManager resources;
+    private Server server;
     private MockedStatic<Server> servers;
     private MockedStatic<PermissionManager> managers;
     private MockedStatic<User> users;
@@ -61,12 +62,13 @@ class CurriculumPermissionTest {
         for (String table : List.of("permissions", "permnodes", "roles")) {
             database.createStatement().execute(resource("/sql/tables/" + table + ".sql"));
         }
-        Server server = mock(Server.class);
+        server = mock(Server.class);
         SQLiteConnection connection = mock(SQLiteConnection.class);
         resources = mock(ResourceManager.class);
         servers = mockStatic(Server.class);
         servers.when(Server::getInstance).thenReturn(server);
         when(server.getConnection()).thenReturn(connection);
+        when(connection.getSQLConnection()).thenReturn(database);
         when(server.getResourceManager()).thenReturn(resources);
         when(resources.readResourceCompletely(any(ResourceLocation.class))).thenAnswer(call -> {
             ResourceLocation l = call.getArgument(0);
@@ -95,6 +97,21 @@ class CurriculumPermissionTest {
             }
             return null;
         }).when(server).processRequest(any(), anyString(), any(String[].class), any(String[].class));
+        doAnswer(call -> {
+            java.util.function.Function<String[], Object> callback = call.getArgument(0);
+            String query = call.getArgument(1);
+            String[] fields = call.getArgument(2);
+            String[] args = (String[]) call.getRawArguments()[3];
+            try (var statement = database.prepareStatement(resource("/sql/queries/" + query + ".sql"))) {
+                SQLHelper.insertArgs(statement, args);
+                try (var rows = statement.executeQuery()) {
+                    if (!rows.next()) return null;
+                    String[] values = new String[fields.length];
+                    for (int i = 0; i < fields.length; i++) values[i] = rows.getString(fields[i]);
+                    return callback.apply(values);
+                }
+            }
+        }).when(server).processSingleRequest(any(), anyString(), any(String[].class), any(String[].class));
         manager = mock(PermissionManager.class);
         managers = mockStatic(PermissionManager.class);
         managers.when(PermissionManager::getInstance).thenReturn(manager);
@@ -122,6 +139,199 @@ class CurriculumPermissionTest {
         if (servers != null) servers.close();
         if (database != null) database.close();
         clearNodeCaches();
+    }
+
+    @Test
+    void newUserPermissionReadDoesNotPersistDefaultOverrides() throws Exception {
+        User newcomer = user("synthetic_new_teacher", false, true, false);
+        users.when(() -> User.getUser("synthetic_new_teacher")).thenReturn(newcomer);
+        assertNotNull(UserEffect.get(newcomer));
+        try (var rows = database.createStatement().executeQuery(
+                "SELECT COUNT(*) FROM permnodes WHERE username='synthetic_new_teacher'")) {
+            assertTrue(rows.next());
+            assertEquals(0, rows.getInt(1), "reading defaults must not persist overrides");
+        }
+    }
+
+    @Test
+    void teacherCreatedAfterStartupFollowsAdminIdentityChangesWithoutRestart() {
+        User newcomer = user("synthetic_lifecycle_teacher", false, true, false);
+        users.when(() -> User.getUser("synthetic_lifecycle_teacher")).thenReturn(newcomer);
+        users.when(User::getAllUsers).thenReturn(List.of(teacher, admin, student, newcomer, User.ANONYMOUS));
+        HttpRequest request = mock(HttpRequest.class);
+        assertEquals(AccessState.RESTRICTED, UserEffect.get(newcomer).testAccess("/manage_teachers", request));
+        when(newcomer.isAdmin()).thenReturn(true);
+        UserEffect.registerAll();
+        assertEquals(AccessState.AUTHORIZED, UserEffect.get(newcomer).testAccess("/manage_teachers", request));
+        when(newcomer.isAdmin()).thenReturn(false);
+        UserEffect.registerAll();
+        assertEquals(AccessState.RESTRICTED, UserEffect.get(newcomer).testAccess("/manage_teachers", request));
+        when(newcomer.isAdmin()).thenReturn(true);
+        UserEffect.registerAll();
+        assertEquals(AccessState.AUTHORIZED, UserEffect.get(newcomer).testAccess("/manage_teachers", request));
+    }
+
+    @Test
+    void existingCrossSourceOrgaSlConflictDeniesBothProcessingPermissions() throws Exception {
+        node(teacher, "freistellung_apply").setActive(true);
+        node(teacher, "freistellung_orga").setActive(true);
+        Role slRole = Role.getByNameOrCreate("synthetic_sl", "Synthetic SL role");
+        slRole.addPermission(Permission.getByName("freistellung_sl"));
+        RoleNode.getRoleNode("teacher", slRole).setActive(true);
+        UserEffect.registerAll();
+        List<String> effective = effectiveNames(teacher);
+        assertTrue(effective.contains("freistellung_apply"));
+        assertFalse(effective.contains("freistellung_orga"));
+        assertFalse(effective.contains("freistellung_sl"));
+    }
+
+    @Test
+    void resolvedCrossSourceConflictRestoresOnlyRemainingProcessingPermission() throws Exception {
+        node(teacher, "freistellung_apply").setActive(true);
+        node(teacher, "freistellung_orga").setActive(true);
+        Role slRole = Role.getByNameOrCreate("synthetic_sl_resolution", "Synthetic SL role");
+        slRole.addPermission(Permission.getByName("freistellung_sl"));
+        RoleNode roleNode = RoleNode.getRoleNode("teacher", slRole);
+        roleNode.setActive(true);
+        UserEffect.registerAll();
+        assertFalse(effectiveNames(teacher).contains("freistellung_orga"));
+        assertFalse(effectiveNames(teacher).contains("freistellung_sl"));
+        roleNode.setActive(false);
+        UserEffect.registerAll();
+        assertTrue(effectiveNames(teacher).contains("freistellung_orga"));
+        assertFalse(effectiveNames(teacher).contains("freistellung_sl"));
+        assertTrue(effectiveNames(teacher).contains("freistellung_apply"));
+    }
+
+    @Test
+    void explicitOverrideCanBeResetToInheritedDefaultAndRemainsResetAfterRebuild() throws Exception {
+        PermissionNode override = node(admin, "curriculum_manage_central");
+        override.setActive(false);
+        UserEffect.registerAll();
+        assertFalse(effectiveNames(admin).contains("curriculum_manage_central"));
+        // The public reset operation is part of the requested contract; reflection
+        // lets this test execute and fail on the pre-implementation version.
+        PermissionNode.class.getMethod("resetToInherited").invoke(override);
+        UserEffect.registerAll();
+        assertTrue(effectiveNames(admin).contains("curriculum_manage_central"));
+        try (var rows = database.createStatement().executeQuery(
+                "SELECT COUNT(*) FROM permnodes WHERE username='admin' AND permission='curriculum_manage_central'")) {
+            assertTrue(rows.next());
+            assertEquals(0, rows.getInt(1), "inherit must not be persisted as an override");
+        }
+        clearNodeCaches();
+        UserEffect.registerAll();
+        assertTrue(effectiveNames(admin).contains("curriculum_manage_central"));
+    }
+
+    @Test
+    void projectedCrossSourceConflictDoesNotPersistTheProposedRole() throws Exception {
+        node(teacher, "freistellung_apply").setActive(true);
+        node(teacher, "freistellung_sl").setActive(true);
+        Role orga = Role.getByNameOrCreate("synthetic_orga_projection", "Synthetic role");
+        orga.addPermissions(Permission.getByName("freistellung_orga"), Permission.getByName("freistellung_apply"));
+        int beforePermissions = count("permnodes");
+        int beforeRoles = count("user_roles");
+        assertTrue(PermissionProjection.wouldCreateConflict(teacher, Map.of(), orga, true, null, null));
+        assertFalse(RoleNode.getRoleNode("teacher", orga).isActive());
+        assertEquals(beforePermissions, count("permnodes"));
+        assertEquals(beforeRoles, count("user_roles"));
+    }
+
+    @Test
+    void projectedRolePermissionChecksOtherRolesWithoutMutation() throws Exception {
+        Role orga = Role.getByNameOrCreate("synthetic_orga_existing", "Synthetic role");
+        orga.addPermissions(Permission.getByName("freistellung_orga"), Permission.getByName("freistellung_apply"));
+        Role other = Role.getByNameOrCreate("synthetic_other", "Synthetic role");
+        RoleNode.getRoleNode("teacher", orga).setActive(true);
+        RoleNode.getRoleNode("teacher", other).setActive(true);
+        int beforePermissions = count("permnodes");
+        int beforeRoles = count("user_roles");
+        assertTrue(PermissionProjection.wouldCreateConflict(teacher, Map.of(), other, null,
+            Permission.getByName("freistellung_sl"), true));
+        assertFalse(other.getPermissions().contains(Permission.getByName("freistellung_sl")));
+        assertEquals(beforePermissions, count("permnodes"));
+        assertEquals(beforeRoles, count("user_roles"));
+    }
+
+    @Test
+    void resettingOneOverridePreservesOtherOverridesInWarmSnapshot() {
+        PermissionNode first = node(admin, "curriculum_manage_central");
+        PermissionNode second = node(admin, "curriculum_view");
+        first.setActive(false);
+        second.setActive(false);
+        UserEffect.registerAll();
+        node(admin, "curriculum_manage_central").resetToInherited();
+        assertFalse(node(admin, "curriculum_view").isActive(), "reset must not discard unrelated cached overrides");
+        UserEffect.registerAll();
+        assertFalse(node(admin, "curriculum_view").isActive());
+    }
+
+    @Test
+    void readOnlyAuditClassifiesLegacyOverridesAgainstEffectiveInheritance() throws Exception {
+        Permission permission = Permission.getByName("curriculum_manage_central");
+        Class<?> type = Class.forName("de.igslandstuhl.database.permissions.PermissionAudit");
+        var audit = type.getDeclaredMethod("classify", User.class, Permission.class);
+        audit.setAccessible(true);
+        int before = count("permnodes");
+        assertEquals("NO_OVERRIDE", audit.invoke(null, teacher, permission));
+        assertEquals(before, count("permnodes"));
+        node(teacher, permission.getName()).setActive(false);
+        assertEquals("LEGACY_MATCH", audit.invoke(null, teacher, permission));
+        when(teacher.isAdmin()).thenReturn(true);
+        assertEquals("LEGACY_RESTRICTIVE_CONFLICT", audit.invoke(null, teacher, permission));
+        when(teacher.isAdmin()).thenReturn(false);
+        node(teacher, permission.getName()).setActive(true);
+        assertEquals("LEGACY_PERMISSIVE_CONFLICT", audit.invoke(null, teacher, permission));
+        node(teacher, permission.getName()).setActive(false);
+        Role role = Role.getByNameOrCreate("audit_additive_role", "Synthetic role");
+        role.addPermission(permission);
+        RoleNode.getRoleNode("teacher", role).setActive(true);
+        assertEquals("LEGACY_MATCH", audit.invoke(null, teacher, permission));
+    }
+
+    @Test
+    void auditShowsCrossSourceConflictWithoutChangingPersistedRows() throws Exception {
+        node(teacher, "freistellung_apply").setActive(true);
+        node(teacher, "freistellung_sl").setActive(true);
+        Role role = Role.getByNameOrCreate("synthetic_orga_audit", "Synthetic role");
+        role.addPermissions(Permission.getByName("freistellung_orga"), Permission.getByName("freistellung_apply"));
+        RoleNode.getRoleNode("teacher", role).setActive(true);
+        int beforePermissions = count("permnodes"), beforeRoles = count("user_roles");
+        Map<String, Object> result = PermissionAudit.report(teacher, Permission.getByName("freistellung_sl"));
+        assertEquals(true, result.get("securityConflict"));
+        assertEquals("ORG_SL_EFFECTIVE_CONFLICT", result.get("securityStatus"));
+        assertTrue(((Set<?>) result.get("orgaSources")).contains("ROLE:synthetic_orga_audit"));
+        assertTrue(((Set<?>) result.get("slSources")).contains("DIRECT_OR_LEGACY_OVERRIDE"));
+        assertEquals(beforePermissions, count("permnodes"));
+        assertEquals(beforeRoles, count("user_roles"));
+    }
+
+    @Test
+    void auditShowsRetainedHistoricalRoleAsHistoryWithoutGrantingOrCreatingOverride() throws Exception {
+        database.createStatement().execute("CREATE TABLE freistellung_roles(username TEXT,role TEXT,PRIMARY KEY(username,role))");
+        database.createStatement().execute("INSERT INTO freistellung_roles(username,role) VALUES('teacher','ORGALEITER')");
+        int before = count("permnodes");
+        Map<String, Object> result = PermissionAudit.report(teacher, Permission.getByName("freistellung_orga"));
+        assertEquals(true, result.get("historicalOrgaRow"));
+        assertEquals(false, result.get("historicalSlRow"));
+        assertEquals("NO_OVERRIDE", result.get("classification"));
+        assertFalse(((Set<?>) result.get("orgaSources")).contains("HISTORICAL_ROLE"));
+        assertEquals(before, count("permnodes"));
+    }
+
+    @Test
+    void failedRebuildDoesNotLeavePreviousGrantsUsable() throws Exception {
+        Role role = Role.getByNameOrCreate("synthetic_read_failure", "Synthetic role");
+        role.addPermission(Permission.getByName("curriculum_manage_central"));
+        RoleNode.getRoleNode("teacher", role).setActive(true);
+        UserEffect.registerAll();
+        assertTrue(effectiveNames(teacher).contains("curriculum_manage_central"));
+        clearNodeCaches();
+        doThrow(new java.sql.SQLException("synthetic role read failure"))
+            .when(server).processSingleRequest(any(), eq("is_active_role_node"), any(String[].class), any(String[].class));
+        assertThrows(RuntimeException.class, UserEffect::registerAll);
+        assertNull(UserEffect.get(teacher), "failed rebuild must not return the previous granted effect");
     }
 
     @Test
@@ -209,12 +419,13 @@ class CurriculumPermissionTest {
 
     @Test
     void secondInitializationAndColdRestartPreserveManualFalseAndTrueWithoutDuplicates() throws Exception {
-        int permissions = count("permissions"), nodes = count("permnodes");
+        int permissions = count("permissions");
         node(teacher, "curriculum_manage_flexible").setActive(false);
         node(teacher, "curriculum_complete_flexible").setActive(false);
         node(admin, "curriculum_manage_central").setActive(false);
         // A manual grant also survives; the backend still rejects teacher central mutations.
         node(teacher, "curriculum_manage_central").setActive(true);
+        int nodes = count("permnodes");
         for (boolean cold : List.of(false, true)) {
             if (cold) { clearNodeCaches(); resetRegistries(); }
             initialize();
@@ -604,10 +815,11 @@ class CurriculumPermissionTest {
 
     @Test
     void studentAndAdminRevocationsSurviveRepeatedInitializationAndColdStart() throws Exception {
-        int permissions=count("permissions"),nodes=count("permnodes");
+        int permissions=count("permissions");
         node(student,"curriculum_student_progress").setActive(false);
         node(admin,"curriculum_assign_context").setActive(false);
         node(teacher,"curriculum_student_progress").setActive(true);
+        int nodes=count("permnodes");
         for(boolean cold:List.of(false,true)) {
             if(cold){clearNodeCaches();resetRegistries();}
             initialize();

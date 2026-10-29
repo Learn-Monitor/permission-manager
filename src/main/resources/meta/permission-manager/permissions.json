@@ -429,6 +429,8 @@
                 "/toggle-permission",
                 "/toggle-role",
                 "/toggle-role-permission",
+                "/permission-override-audit",
+                "/set-permission-override",
                 "/get-permission-node",
                 "/get-role-node",
                 "/add-role",

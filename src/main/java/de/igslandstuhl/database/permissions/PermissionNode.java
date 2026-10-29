@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 
 import de.igslandstuhl.database.api.User;
 import de.igslandstuhl.database.server.Server;
@@ -26,14 +25,25 @@ public class PermissionNode {
         index.keySet().removeIf(key -> key.username().equals(username));
     }
 
+    private static void invalidatePermission(String username, String permissionName) {
+        cache.removeIf(node -> node.username.equals(username) && node.permission.getName().equals(permissionName));
+        index.remove(new CacheKey(username, permissionName));
+    }
+
     private final Permission permission;
     private final String username;
     private boolean active;
+    private boolean override;
 
     public PermissionNode(Permission permission, String username, boolean active) {
+        this(permission, username, active, true);
+    }
+
+    private PermissionNode(Permission permission, String username, boolean active, boolean override) {
         this.permission = permission;
         this.username = username;
         this.active = active;
+        this.override = override;
     }
 
     public Permission getPermission() {
@@ -45,26 +55,60 @@ public class PermissionNode {
     }
 
     public boolean isActive() {
-        return active;
+        return override ? active : defaultActive(username, permission);
+    }
+
+    /** Use the already resolved canonical user while rebuilding a permission set. */
+    boolean isActive(User user) {
+        return override ? active : defaultActive(user, permission);
     }
 
     public void setActive(boolean active) {
+        boolean previous = this.active;
         this.active = active;
-        persistToDatabase();
+        try {
+            insertIntoDatabase();
+            override = true;
+            invalidatePermission(username, permission.getName());
+            cache.add(this);
+            index.put(new CacheKey(username, permission.getName()), this);
+        } catch (RuntimeException e) {
+            this.active = previous;
+            throw e;
+        }
     }
 
     public void toggleActive() {
-        setActive(!active);
+        setActive(!isActive());
     }
 
-    private void persistToDatabase() {
+    /** Removes the individual override and resumes the current identity default. */
+    public void resetToInherited() {
         try {
             Server.getInstance().getConnection().executeVoidProcessSecure(
-                SQLHelper.getUpdateObjectProcess("permission_node", new String[]{String.valueOf(active), permission.getName(), username})
-            );
+                SQLHelper.getDeleteObjectProcess("permission_node", permission.getName(), username));
         } catch (SQLException e) {
-            PermissionManager.getInstance().getLogger().error("Failed to persist PermissionNode for user \"{}\" and permission \"{}\" to database", username, permission.getName(), e);
+            throw new IllegalStateException("Failed to reset permission override", e);
         }
+        override = false;
+        invalidatePermission(username, permission.getName());
+    }
+
+    public boolean hasOverride() { return override; }
+
+    /** Read the persisted override without materializing defaults or modifying caches. */
+    static Boolean readOverride(String username, Permission permission) {
+        try {
+            return Server.getInstance().processSingleRequest(fields -> parseActive(fields[0]),
+                "is_active_node", new String[] {"active"}, permission.getName(), username);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read permission override", e);
+        }
+    }
+
+    static boolean readDirectActive(String username, Permission permission) {
+        Boolean stored = readOverride(username, permission);
+        return stored != null ? stored : defaultActive(username, permission);
     }
 
     private void insertIntoDatabase() {
@@ -73,11 +117,11 @@ public class PermissionNode {
                 SQLHelper.getAddObjectProcess("permission_node", permission.getName(), username, String.valueOf(active))
             );
         } catch (SQLException e) {
-            PermissionManager.getInstance().getLogger().error("Failed to insert PermissionNode for user \"{}\" and permission \"{}\" to database", username, permission.getName(), e);
+            throw new IllegalStateException("Failed to persist permission override", e);
         }
     }
 
-    public static PermissionNode getPermissionNode(String username, Permission permission) {
+    public static synchronized PermissionNode getPermissionNode(String username, Permission permission) {
         CacheKey key = new CacheKey(username, permission.getName());
         if (cache.isEmpty() && !index.isEmpty()) {
             index.clear();
@@ -87,73 +131,54 @@ public class PermissionNode {
         if (node != null) return node;
 
         if (snapshotLoaded) {
-            AccessLevel defaultLevel = PermissionManager.getInstance().permissionEffectRegistry().get(permission).defaultLevel();
-            User user = User.getUser(username);
-            boolean active = isDefaultActive(defaultLevel, user);
-            active = active && PermissionManager.getInstance().permissionEffectRegistry().get(permission).isDefaultEligible(user);
-            node = new PermissionNode(permission, username, active);
-            node.insertIntoDatabase();
-            cache.add(node);
-            index.put(key, node);
-            return node;
+            return new PermissionNode(permission, username, false, false);
         }
 
-        AtomicReference<PermissionNode> nodeRef = new AtomicReference<>();
+        Boolean persisted;
         try {
-            Server.getInstance().processRequest(
-                fields -> {
-                    boolean active = Boolean.parseBoolean(fields[0]);
-                    nodeRef.set(new PermissionNode(permission, username, active));
-                },
-                "is_active_node",
-                new String[] {"active"},
-                permission.getName(),
-                username)
-            ;
-        } catch (SQLException e) {
+            persisted = readOverride(username, permission);
+        } catch (IllegalStateException e) {
             PermissionManager.getInstance().getLogger().error("Failed to retrieve Permissions from database", e);
+            return new PermissionNode(permission, username, false, true);
         }
-        node = nodeRef.get();
-
-        if (node == null) {
-            AccessLevel defaultLevel = PermissionManager.getInstance().permissionEffectRegistry().get(permission).defaultLevel();
-            User user = User.getUser(username);
-            boolean active = isDefaultActive(defaultLevel, user);
-            active = active && PermissionManager.getInstance().permissionEffectRegistry().get(permission).isDefaultEligible(user);
-            node = new PermissionNode(permission, username, active);
-            node.insertIntoDatabase();
+        if (persisted == null) {
+            return new PermissionNode(permission, username, false, false);
         }
+        node = new PermissionNode(permission, username, persisted);
         cache.add(node);
         index.put(key, node);
         return node;
     }
 
     /** Load persistent node state once for a rebuild; failures retain legacy lookup behavior. */
-    public static boolean loadSnapshot() {
-        cache.clear();
-        index.clear();
-        snapshotLoaded = false;
-        try {
-            Server.getInstance().processRequest(
-                fields -> {
-                    Permission permission = Permission.getByName(fields[0]);
-                    if (permission != null) {
-                        PermissionNode node = new PermissionNode(permission, fields[1], Boolean.parseBoolean(fields[2]));
-                        cache.add(node);
-                        index.put(new CacheKey(fields[1], fields[0]), node);
-                    }
-                },
-                "get_all_permission_nodes",
-                new String[] {"permission", "username", "active"});
+    public static synchronized boolean loadSnapshot() {
+        List<PermissionNode> loaded = new java.util.ArrayList<>();
+        try (var statement = Server.getInstance().getConnection().getSQLConnection()
+                .prepareStatement("SELECT permission, username, active FROM permnodes");
+             var rows = statement.executeQuery()) {
+            while (rows.next()) {
+                Permission permission = Permission.getByName(rows.getString("permission"));
+                if (permission != null) loaded.add(new PermissionNode(permission, rows.getString("username"), parseActive(rows.getString("active"))));
+            }
+            cache.clear();
+            index.clear();
+            for (PermissionNode node : loaded) {
+                cache.add(node);
+                index.put(new CacheKey(node.username, node.permission.getName()), node);
+            }
             snapshotLoaded = true;
             return true;
         } catch (SQLException e) {
+            cache.clear();
+            index.clear();
+            snapshotLoaded = false;
             PermissionManager.getInstance().getLogger().error("Failed to load PermissionNode snapshot", e);
             return false;
         }
     }
 
     static boolean isDefaultActive(AccessLevel defaultLevel, User user) {
+        if (user == null || user == User.ANONYMOUS || defaultLevel == null) return false;
         return switch (defaultLevel) {
             case ADMIN -> user.isAdmin();
             case TEACHER -> user.isTeacher() || user.isAdmin();
@@ -164,12 +189,49 @@ public class PermissionNode {
         };
     }
 
+    static boolean parseActive(String value) {
+        // Preserve the historical interpretation of existing stored values;
+        // treating legacy numeric 1 as a new grant would silently escalate access.
+        return "true".equalsIgnoreCase(value);
+    }
+
+    static boolean defaultActive(String username, Permission permission) {
+        return defaultActive(User.getUser(username), permission);
+    }
+
+    static boolean defaultActive(User user, Permission permission) {
+        PermissionEffect effect = PermissionManager.getInstance().permissionEffectRegistry().get(permission);
+        return effect != null && isDefaultActive(effect.defaultLevel(), user) && effect.isDefaultEligible(user);
+    }
+
+    static boolean defaultActiveWithAdmin(User user, Permission permission, boolean admin) {
+        PermissionEffect effect = PermissionManager.getInstance().permissionEffectRegistry().get(permission);
+        if (effect == null || user == null || user == User.ANONYMOUS) return false;
+        boolean student = user.isStudent(), teacher = user.isTeacher();
+        boolean active = switch (effect.defaultLevel()) {
+            case ADMIN -> admin;
+            case TEACHER -> teacher || admin;
+            case STUDENT -> student;
+            case USER -> student || teacher || admin;
+            case PUBLIC -> true;
+            default -> false;
+        };
+        if (!effect.exactDefault()) return active;
+        return active && switch (effect.defaultLevel()) {
+            case STUDENT -> student;
+            case TEACHER -> teacher;
+            case ADMIN -> admin;
+            default -> false;
+        };
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("{")
         .append("\"permission\":").append(getPermission()).append(",")
         .append("\"username\":\"").append(getUsername()).append("\",")
-        .append("\"active\":").append(isActive())
+        .append("\"active\":").append(isActive()).append(",")
+        .append("\"override\":\"").append(override ? (active ? "allow" : "deny") : "inherit").append("\"")
         .append("}")
         .toString();
     }

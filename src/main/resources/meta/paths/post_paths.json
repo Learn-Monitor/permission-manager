@@ -23,6 +23,18 @@
         "namespaces": [],
         "access_level": "admin"
     },
+    "/permission-override-audit": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
+    },
+    "/set-permission-override": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
+    },
     "/get-permission-node": {
         "type": "POST",
         "handler_type": "PostRequestHandler",
