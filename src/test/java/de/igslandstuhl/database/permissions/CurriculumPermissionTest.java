@@ -385,8 +385,11 @@ class CurriculumPermissionTest {
             .flatMap(s -> ((List<Map<String, Object>>) config.get(s)).stream()).toList();
         ROUTES.forEach((name, paths) -> paths.forEach(path -> {
             var matches = all.stream().filter(p -> ((List<?>) p.get("paths")).contains(path)).toList();
-            assertEquals(1, matches.size(), path);
-            var permission = matches.get(0);
+            var owned = matches.stream().filter(p -> name.equals(p.get("name"))).toList();
+            assertEquals(1, owned.size(), path);
+            if (List.of("/add-curriculum-topic", "/rename-topic", "/add-curriculum-task", "/edit-task").contains(path))
+                assertTrue(matches.stream().anyMatch(p -> "curriculum_manage_faculty".equals(p.get("name"))), path);
+            var permission = owned.get(0);
             assertEquals(name, permission.get("name"), path);
             assertEquals(name.equals("curriculum_manage_central") ? "admin" : "teacher", permission.get("default"));
             assertEquals(List.of(), permission.get("post_restrictions"));
@@ -614,6 +617,7 @@ class CurriculumPermissionTest {
     void allExistingFlatRoutesRetainTheirEffectiveRoleBoundaries() {
         var legacy = Permission.getAll().stream()
             .filter(p -> !ROUTES.containsKey(p.getName()) && !CONTEXT_ROUTES.containsKey(p.getName()) && !List.of("curriculum_publish","curriculum_manage_enrollment","curriculum_assess_students","curriculum_tutor_context","freistellung_teacher","freistellung_admin","freistellung_mail_admin").contains(p.getName()))
+            .filter(p -> !"curriculum_manage_faculty".equals(p.getName()))
             .map(manager.permissionEffectRegistry()::get).toList();
         for (User user : List.of(teacher, admin, student, User.ANONYMOUS)) {
             var active = legacy.stream().filter(e -> user == User.ANONYMOUS

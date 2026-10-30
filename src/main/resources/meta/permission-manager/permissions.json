@@ -238,6 +238,20 @@
             "require_dependencies": true
         },
         {
+            "name": "curriculum_manage_faculty",
+            "description": "Allows Fachleitung to create and edit central curriculum topics and stages.",
+            "paths": [
+                "/add-curriculum-topic",
+                "/rename-topic",
+                "/add-curriculum-task",
+                "/edit-task"
+            ],
+            "post_restrictions": [],
+            "depends": ["curriculum_view"],
+            "default": "none",
+            "require_dependencies": true
+        },
+        {
             "name": "login",
             "description": "Allows viewing the login page. Do not remove this from the ANONYMOUS user, or no one may be able to sign in.",
             "paths": [
@@ -385,7 +399,9 @@
                 ,"/edit-teacher-profile",
                 "/admin-reset-password",
                 "/delete-teacher",
-                "/manage-teachers.js"
+                "/manage-teachers.js",
+                "/get-teacher-visible-roles",
+                "/set-teacher-visible-role"
             ],
             "post_restrictions": [],
             "depends": [

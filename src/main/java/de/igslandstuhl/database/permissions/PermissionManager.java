@@ -2,6 +2,8 @@ package de.igslandstuhl.database.permissions;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +34,11 @@ public class PermissionManager extends Plugin {
     private final Map<String, Role> roles = new HashMap<>();
     private static final Set<String> FREISTELLUNG_PROCESSING = Set.of("freistellung_orga", "freistellung_sl");
     private static final String FREISTELLUNG_APPLY = "freistellung_apply";
+    private static final Map<String, String> VISIBLE_ROLES = Map.of(
+        "orga", "visible_orgaleitung",
+        "sl", "visible_schulleitung",
+        "fachleitung", "visible_fachleitung"
+    );
     private static final Object MUTATION_LOCK = UserEffect.mutationLock();
 
     public PermissionManager() {
@@ -99,6 +106,7 @@ public class PermissionManager extends Plugin {
         RestrictionTypeHelper.registerDefaults();
         getLogger().info("Registering permission effects...");
         PermissionsConfigLoader.getInstance().registerAllPermissionEffects();
+        ensureVisibleRoles();
         getLogger().info("Registering user effects...");
         UserEffect.registerAll();
         UserAccountDeletedListener.getInstance().register();
@@ -241,6 +249,51 @@ public class PermissionManager extends Plugin {
             // changed admin role without a restart or re-login.
             UserEffect.registerAll();
             return PostResponse.ok("Organisationsrolle gespeichert", ContentType.TEXT_PLAIN, rq);
+            }
+        });
+        HttpHandler.registerPostRequestHandler("/get-teacher-visible-roles", AccessLevel.ADMIN, (rq) -> {
+            List<Map<String, Object>> result = User.getAllUsers().stream()
+                .filter(u -> u instanceof Teacher)
+                .map(u -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("username", u.getUsername());
+                    item.put("admin", u.isAdmin());
+                    item.put("orga", visibleRoleActive(u, "orga"));
+                    item.put("sl", visibleRoleActive(u, "sl"));
+                    item.put("fachleitung", visibleRoleActive(u, "fachleitung"));
+                    return item;
+                }).toList();
+            return PostResponse.json(result, rq);
+        });
+        HttpHandler.registerPostRequestHandler("/set-teacher-visible-role", AccessLevel.ADMIN, (rq) -> {
+            synchronized (MUTATION_LOCK) {
+                User target = User.getUser(rq.getString("user"));
+                String visibleRole = rq.getString("role");
+                boolean enabled = rq.getBoolean("enabled");
+                if (!(target instanceof Teacher) || (!VISIBLE_ROLES.containsKey(visibleRole) && !"admin".equals(visibleRole)))
+                    return PostResponse.badRequest("Ungültige Lehrkraft oder Zusatzrolle", rq);
+                if ("admin".equals(visibleRole)) {
+                    Teacher teacher = (Teacher) target;
+                    if (enabled) {
+                        if (!teacher.isAdmin()) Admin.createWithPasswordHash(teacher.getUsername(), teacher.getPasswordHash());
+                    } else {
+                        Admin admin = Admin.get(teacher.getUsername());
+                        if (admin != null) admin.delete();
+                    }
+                    UserEffect.registerAll();
+                    return PostResponse.json(Map.of("saved", true, "role", visibleRole, "enabled", enabled), rq);
+                }
+                if ("orga".equals(visibleRole) || "sl".equals(visibleRole)) {
+                    Role role = Role.getByName(VISIBLE_ROLES.get(visibleRole));
+                    if (role == null) return PostResponse.internalServerError("Zusatzrolle ist nicht konfiguriert", rq);
+                    if (enabled && PermissionProjection.conflictAfter(target, Map.of(), role, true, null, null))
+                        return PostResponse.badRequest("Orgaleitung und Schulleitung schließen sich aus", rq);
+                }
+                Role role = Role.getByName(VISIBLE_ROLES.get(visibleRole));
+                if (role == null) return PostResponse.internalServerError("Zusatzrolle ist nicht konfiguriert", rq);
+                RoleNode.getRoleNode(target.getUsername(), role).setActive(enabled);
+                UserEffect.registerAll();
+                return PostResponse.json(Map.of("saved", true, "role", visibleRole, "enabled", enabled), rq);
             }
         });
         HttpHandler.registerPostRequestHandler("/set-freistellung-right", AccessLevel.ADMIN, (rq) -> {
@@ -393,6 +446,21 @@ public class PermissionManager extends Plugin {
 
     private static boolean isFreistellung(String name) {
         return FREISTELLUNG_APPLY.equals(name) || FREISTELLUNG_PROCESSING.contains(name);
+    }
+
+    private static boolean visibleRoleActive(User user, String visibleRole) {
+        Role role = Role.getByName(VISIBLE_ROLES.get(visibleRole));
+        return role != null && RoleNode.readActive(user.getUsername(), role);
+    }
+
+    private static void ensureVisibleRoles() {
+        Role orga = Role.getByNameOrCreate("visible_orgaleitung", "Orgaleitung (fachliche Zusatzrolle)");
+        orga.addPermissions(Permission.getByName(FREISTELLUNG_APPLY), Permission.getByName("freistellung_orga"));
+        Role sl = Role.getByNameOrCreate("visible_schulleitung", "Schulleitung (fachliche Zusatzrolle)");
+        sl.addPermissions(Permission.getByName(FREISTELLUNG_APPLY), Permission.getByName("freistellung_sl"));
+        Role faculty = Role.getByNameOrCreate("visible_fachleitung", "Fachleitung (fachliche Zusatzrolle)");
+        faculty.addPermission(Permission.getByName("curriculum_manage_faculty"));
+        RolesYamlConfigLoader.getInstance().saveRoles();
     }
 
     private static PostResponse toggleFreistellung(User user, Permission permission, de.igslandstuhl.database.server.webserver.requests.APIPostRequest rq) {

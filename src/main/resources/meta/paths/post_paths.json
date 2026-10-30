@@ -76,5 +76,17 @@
         "handler_type": "PostRequestHandler",
         "namespaces": [],
         "access_level": "admin"
+    },
+    "/get-teacher-visible-roles": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
+    },
+    "/set-teacher-visible-role": {
+        "type": "POST",
+        "handler_type": "PostRequestHandler",
+        "namespaces": [],
+        "access_level": "admin"
     }
 }
