@@ -24,6 +24,11 @@ public class AccessListener extends EventListener<AccessManagerEvent> {
 
     @Override
     public void onEvent(AccessManagerEvent event) {
+        // PUBLIC is already a complete access decision.  A logged-in user's
+        // permission snapshot must not turn shared CSS/JS/assets into 403s,
+        // especially while a dual-role session is on the mode-selection page.
+        if (event.getAccessState() == de.igslandstuhl.database.server.webserver.access.AccessState.PERMITTED)
+            return;
         User currentUser = Server.getInstance().getWebServer().getSessionManager().getSessionUser(event.getRequest());
         if (currentUser == null) currentUser = User.ANONYMOUS;
         UserEffect effect = UserEffect.get(currentUser);
