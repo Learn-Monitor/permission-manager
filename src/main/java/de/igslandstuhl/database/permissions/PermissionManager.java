@@ -330,7 +330,12 @@ public class PermissionManager extends Plugin {
                     return PostResponse.badRequest("Orga-Leitung und Schulleitung schließen sich aus", rq);
                 PermissionNode node = PermissionNode.getPermissionNode(user.getUsername(), permission);
                 if (state.equals("inherit")) {
-                    if (node.hasOverride()) node.resetToInherited();
+                    // The cache may still hold an inherited node while a persisted
+                    // override exists (for example after an out-of-band role/cache
+                    // refresh). Reset is deliberately idempotent, so always issue
+                    // the targeted delete instead of making persistence depend on
+                    // the cached provenance bit.
+                    node.resetToInherited();
                 } else {
                     node.setActive(proposed);
                 }

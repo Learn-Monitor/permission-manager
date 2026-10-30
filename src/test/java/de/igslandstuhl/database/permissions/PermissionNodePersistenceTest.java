@@ -1,6 +1,7 @@
 package de.igslandstuhl.database.permissions;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -27,6 +28,8 @@ import org.mockito.MockedStatic;
 
 import de.igslandstuhl.database.server.Server;
 import de.igslandstuhl.database.Registry;
+import de.igslandstuhl.database.server.resources.ResourceLocation;
+import de.igslandstuhl.database.server.resources.ResourceManager;
 import de.igslandstuhl.database.server.sql.SQLiteConnection;
 import de.igslandstuhl.database.server.sql.SQLHelper;
 import de.igslandstuhl.database.server.sql.SQLVoidProcess;
@@ -97,6 +100,43 @@ class PermissionNodePersistenceTest {
 
             writeNode(connection, "view_grades", "student", true);
             assertTrue(readActive(connection, "view_grades", "student"));
+        }
+    }
+
+    @Test
+    void resetToInheritedDeletesTheExactOverrideAndIsIdempotent() throws Exception {
+        Permission permission = new Permission("view_grades", "View grades");
+        try (Connection database = DriverManager.getConnection("jdbc:sqlite::memory:")) {
+            database.createStatement().execute("CREATE TABLE permissions (name VARCHAR(255) PRIMARY KEY)");
+            database.createStatement().execute("INSERT INTO permissions (name) VALUES ('view_grades')");
+            database.createStatement().execute(resource("/sql/tables/permnodes.sql"));
+            database.createStatement().execute(
+                "INSERT INTO permnodes(permission,username,active) VALUES('view_grades','student','true')");
+
+            Server server = mock(Server.class);
+            SQLiteConnection connection = mock(SQLiteConnection.class);
+            ResourceManager resources = mock(ResourceManager.class);
+            when(server.getConnection()).thenReturn(connection);
+            when(connection.getSQLConnection()).thenReturn(database);
+            when(server.getResourceManager()).thenReturn(resources);
+            when(resources.readResourceCompletely(any(ResourceLocation.class)))
+                .thenReturn(resource("/sql/pushes/delete_permission_node.sql"));
+            doAnswer(call -> {
+                SQLVoidProcess process = call.getArgument(0);
+                process.execute(database::prepareStatement);
+                return null;
+            }).when(connection).executeVoidProcessSecure(any(SQLVoidProcess.class));
+            try (MockedStatic<Server> serverMock = mockStatic(Server.class)) {
+                serverMock.when(Server::getInstance).thenReturn(server);
+                PermissionNode node = new PermissionNode(permission, "student", true);
+                node.resetToInherited();
+                node.resetToInherited();
+                try (var rows = database.createStatement().executeQuery(
+                        "SELECT COUNT(*) FROM permnodes WHERE permission='view_grades' AND username='student'")) {
+                    assertTrue(rows.next());
+                    assertEquals(0, rows.getInt(1));
+                }
+            }
         }
     }
 
