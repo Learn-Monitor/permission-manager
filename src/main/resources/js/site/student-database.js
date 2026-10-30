@@ -5,6 +5,13 @@ async function fetchCurrentPermissions() {
 }
 
 async function loadCurrentPermissions() {
+    // The mode-selection page is intentionally not an application workspace.
+    // Do not probe a protected permission endpoint while a dual-role session
+    // is pending; the next dashboard navigation loads permissions normally.
+    if (window.location.pathname === '/select-mode') {
+        currentPermissions = [];
+        return currentPermissions;
+    }
     try {
         currentPermissions = await fetchCurrentPermissions();
     } catch (error) {
