@@ -1048,7 +1048,7 @@
             "name": "freistellung_orga",
             "description": "Darf Freistellungsanträge als Orga-Leitung bearbeiten.",
             "paths": [
-                "/freistellung-bearbeitung", "/freistellung.css", "/freistellung.js",
+                "/freistellung-bearbeitung", "/freistellung-bearbeitung.js", "/freistellung.css", "/freistellung.js",
                 "/freistellung-data", "/freistellung-role-info", "/freistellung-orga",
                 "/freistellung-delete", "/freistellung-resend", "/freistellung-attachment"
             ],
@@ -1061,7 +1061,7 @@
             "name": "freistellung_sl",
             "description": "Darf Freistellungsanträge als Schulleitung bearbeiten.",
             "paths": [
-                "/freistellung-bearbeitung", "/freistellung.css", "/freistellung.js",
+                "/freistellung-bearbeitung", "/freistellung-bearbeitung.js", "/freistellung.css", "/freistellung.js",
                 "/freistellung-data", "/freistellung-role-info", "/freistellung-sl",
                 "/freistellung-delete", "/freistellung-resend", "/freistellung-attachment"
             ],
