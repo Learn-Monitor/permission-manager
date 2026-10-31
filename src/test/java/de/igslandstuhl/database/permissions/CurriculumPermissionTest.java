@@ -21,11 +21,14 @@ import de.igslandstuhl.database.Registry;
 import de.igslandstuhl.database.api.User;
 import de.igslandstuhl.database.permissions.meta.PermissionsConfigLoader;
 import de.igslandstuhl.database.server.Server;
+import de.igslandstuhl.database.server.WebServer;
 import de.igslandstuhl.database.server.resources.ResourceLocation;
 import de.igslandstuhl.database.server.resources.ResourceManager;
 import de.igslandstuhl.database.server.sql.*;
+import de.igslandstuhl.database.server.webserver.WebPath;
 import de.igslandstuhl.database.server.webserver.access.*;
 import de.igslandstuhl.database.server.webserver.requests.*;
+import de.igslandstuhl.database.server.webserver.sessions.SessionManager;
 
 @SuppressWarnings("unchecked")
 class CurriculumPermissionTest {
@@ -169,6 +172,54 @@ class CurriculumPermissionTest {
         when(newcomer.isAdmin()).thenReturn(true);
         UserEffect.registerAll();
         assertEquals(AccessState.AUTHORIZED, UserEffect.get(newcomer).testAccess("/manage_teachers", request));
+    }
+
+    @Test
+    void activeAdminModePreservesCoreAdminRouteAuthorizationAgainstStaleFineGrainedSnapshot() {
+        when(teacher.isAdmin()).thenReturn(true);
+        node(teacher, "manage_teachers").setActive(false);
+        node(teacher, "core_admin_compat").setActive(false);
+        UserEffect.registerAll();
+        assertEquals(AccessState.RESTRICTED,
+                UserEffect.get(teacher).testAccess("/manage_teachers", mock(HttpRequest.class)),
+                "the fine-grained snapshot remains restrictive; Core admin-mode authorization is the separate boundary");
+        WebServer webServer = mock(WebServer.class);
+        SessionManager sessions = mock(SessionManager.class);
+        when(server.getWebServer()).thenReturn(webServer);
+        when(webServer.getSessionManager()).thenReturn(sessions);
+        HttpRequest request = mock(HttpRequest.class);
+        when(request.getRequestType()).thenReturn(RequestType.GET);
+        when(request.getPath()).thenReturn("/manage_teachers");
+        when(sessions.getSessionUser(request)).thenReturn(teacher);
+        when(sessions.getActiveMode(request)).thenReturn("admin");
+        WebPath.registerPath("/manage_teachers", RequestType.GET, "test", List.of(), "test", AccessLevel.ADMIN);
+
+        AccessManagerEvent event = AccessManagerEvent.authorized("/manage_teachers", request);
+        AccessListener.getInstance().onEvent(event);
+
+        assertTrue(event.getChangedAccessState().isEmpty(),
+                "Permission Manager must not downgrade an authorized admin-mode route because of a stale snapshot");
+    }
+
+    @Test
+    void teacherModeDoesNotQualifyForCoreAdminRoutePreservation() {
+        when(teacher.isAdmin()).thenReturn(true);
+        WebServer webServer = mock(WebServer.class);
+        SessionManager sessions = mock(SessionManager.class);
+        when(server.getWebServer()).thenReturn(webServer);
+        when(webServer.getSessionManager()).thenReturn(sessions);
+        HttpRequest request = mock(HttpRequest.class);
+        when(request.getRequestType()).thenReturn(RequestType.GET);
+        when(request.getPath()).thenReturn("/manage_teachers");
+        when(sessions.getSessionUser(request)).thenReturn(teacher);
+        when(sessions.getActiveMode(request)).thenReturn("teacher");
+        WebPath.registerPath("/manage_teachers", RequestType.GET, "test", List.of(), "test", AccessLevel.ADMIN);
+
+        AccessManagerEvent event = AccessManagerEvent.restricted("/manage_teachers", request);
+        AccessListener.getInstance().onEvent(event);
+
+        assertTrue(event.getChangedAccessState().isPresent());
+        assertEquals(AccessState.RESTRICTED, event.getChangedAccessState().get());
     }
 
     @Test
